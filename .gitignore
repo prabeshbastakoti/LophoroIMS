@@ -1,6 +1,9 @@
 # Claude Code
 .claude/
 
+# Project reports
+Project_Report*.md
+
 # Python
 __pycache__/
 *.pyc
