@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="content-card">
+    <div class="page-header">
+        <h3>Purchase #{{ purchase.id }}</h3>
+
+        <div style="display:flex; gap:10px;">
+            <a href="/procurement/purchases/" class="secondary-btn">Back</a>
+
+            {% if purchase.status == "DRAFT" %}
+                <a href="/procurement/purchases/{{ purchase.id }}/receive/" class="primary-btn">Receive Purchase</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-bottom:18px;">
+        <p><strong>Supplier:</strong> {{ purchase.supplier.name }}</p>
+        <p><strong>Created By:</strong> {{ purchase.created_by.username }}</p>
+        <p><strong>Status:</strong> {{ purchase.status }}</p>
+        <p><strong>Created At:</strong> {{ purchase.created_at }}</p>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Unit Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in purchase.items.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.unit_cost }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No items found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

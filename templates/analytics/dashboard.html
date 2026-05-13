@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ── Low stock alert ─────────────────────────────────────────────────── -->
+{% if low_stock_products %}
+<div class="alert-banner alert-banner-warning" data-aos="fade-down"
+     style="margin-bottom:var(--space-4);display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);">
+  <div style="display:flex;align-items:center;gap:var(--space-3);">
+    <i data-lucide="alert-triangle" width="18" height="18" style="flex-shrink:0;"></i>
+    <div>
+      <strong>{{ low_stock_products.count }} product{{ low_stock_products.count|pluralize }} running low</strong>
+      <span style="margin-left:8px;opacity:.8;">—
+        {% for p in low_stock_products|slice:":4" %}{{ p.name }} ({{ p.current_stock }} left){% if not forloop.last %}, {% endif %}{% endfor %}
+        {% if low_stock_products.count > 4 %} and {{ low_stock_products.count|add:"-4" }} more…{% endif %}
+      </span>
+    </div>
+  </div>
+  <a href="/inventory/" class="btn-secondary" style="white-space:nowrap;flex-shrink:0;">View Inventory</a>
+</div>
+{% endif %}
+
+<!-- ── Draft orders alert ──────────────────────────────────────────────── -->
+{% if draft_orders_count %}
+<div class="alert-banner" data-aos="fade-down"
+     style="margin-bottom:var(--space-4);display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);
+            background:var(--color-cream-pale);border:1px solid var(--color-border);border-left:4px solid var(--color-warning);">
+  <div style="display:flex;align-items:center;gap:var(--space-3);">
+    <i data-lucide="clock" width="18" height="18" style="flex-shrink:0;color:var(--color-warning);"></i>
+    <div>
+      <strong>{{ draft_orders_count }} order{{ draft_orders_count|pluralize }} awaiting confirmation</strong>
+      <span style="margin-left:8px;opacity:.7;">— Stock is not reserved until orders are confirmed</span>
+    </div>
+  </div>
+  <a href="/orders/" class="btn-secondary" style="white-space:nowrap;flex-shrink:0;">View Orders</a>
+</div>
+{% endif %}
+
+<!-- ── Hero card ───────────────────────────────────────────────────────── -->
+<div class="hero-card" data-aos="fade-up">
+  <div class="hero-shimmer"></div>
+
+  <div class="hero-card-content">
+    <p class="hero-label">Total Inventory Stock</p>
+    <div class="hero-value">
+      <span data-counter="{{ total_stock }}" data-duration="1400">0</span>
+    </div>
+    <p class="hero-sub">
+      Units across all product lines — tracked in real-time with low-stock alerts,
+      EOQ optimisation, and trend-driven reorder intelligence.
+    </p>
+    <div class="hero-actions">
+      <a href="/inventory/" class="btn-primary">View Inventory</a>
+      <a href="/analytics/trends/" class="btn-ghost">Sales Trends &rarr;</a>
+    </div>
+  </div>
+
+  <div class="hero-kpi-grid">
+    <div class="hero-kpi">
+      <span class="hero-kpi-value" data-counter="{{ total_products }}">0</span>
+      <span class="hero-kpi-label">Products</span>
+    </div>
+    <div class="hero-kpi">
+      <span class="hero-kpi-value" data-counter="{{ total_orders }}">0</span>
+      <span class="hero-kpi-label">Confirmed Orders</span>
+    </div>
+    <div class="hero-kpi">
+      <span class="hero-kpi-value" data-counter="{{ total_purchases }}">0</span>
+      <span class="hero-kpi-label">Purchases Received</span>
+    </div>
+    <div class="hero-kpi hero-kpi-alert">
+      <span class="hero-kpi-value" data-counter="{{ low_stock_products|length }}">0</span>
+      <span class="hero-kpi-label">Low Stock Alerts</span>
+    </div>
+  </div>
+
+  <div class="hero-card-decor"></div>
+</div>
+
+<!-- ── Today at a glance ───────────────────────────────────────────────── -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-8);margin-top:var(--space-8);"
+     data-aos="fade-up" data-aos-delay="60">
+
+  <!-- Today's orders -->
+  <div class="panel-card" style="text-align:center;">
+    <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-3);">
+      Today's Orders
+    </p>
+    <p style="font-size:40px;font-weight:800;letter-spacing:-0.02em;color:var(--color-text-dark);line-height:1;">
+      {{ today_order_count }}
+    </p>
+    <p style="font-size:12px;color:var(--color-text-muted);margin-top:var(--space-2);">
+      confirmed order{{ today_order_count|pluralize }} today
+    </p>
+  </div>
+
+  <!-- Today's revenue -->
+  <div class="panel-card" style="text-align:center;">
+    <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-3);">
+      Today's Revenue
+    </p>
+    <p style="font-size:30px;font-weight:800;letter-spacing:-0.02em;color:var(--color-text-dark);line-height:1;">
+      NPR {{ today_revenue|floatformat:0 }}
+    </p>
+    <p style="font-size:12px;color:var(--color-text-muted);margin-top:var(--space-2);">
+      from confirmed orders
+    </p>
+  </div>
+
+  <!-- This month -->
+  <div class="panel-card" style="text-align:center;">
+    <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-3);">
+      This Month
+    </p>
+    <p style="font-size:28px;font-weight:800;letter-spacing:-0.02em;color:var(--color-text-dark);line-height:1;">
+      NPR {{ this_month_revenue|floatformat:0 }}
+    </p>
+    {% if month_change is not None %}
+    <p style="font-size:13px;font-weight:600;margin-top:var(--space-2);
+              color:{% if month_change > 0 %}var(--color-success){% elif month_change < 0 %}var(--color-danger){% else %}var(--color-text-muted){% endif %};">
+      {% if month_change > 0 %}▲ +{{ month_change }}%
+      {% elif month_change < 0 %}▼ {{ month_change }}%
+      {% else %}→ 0%{% endif %}
+      <span style="color:var(--color-text-muted);font-weight:400;font-size:11px;"> vs last month</span>
+    </p>
+    {% else %}
+    <p style="font-size:12px;color:var(--color-text-muted);margin-top:var(--space-2);">first month on record</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ── Main grid ───────────────────────────────────────────────────────── -->
+<div class="dashboard-grid" data-aos="fade-up" data-aos-delay="120">
+
+  <!-- Left column -->
+  <div class="dashboard-col-main">
+
+    <!-- Top selling products -->
+    <div class="panel-card">
+      <div class="panel-header">
+        <div>
+          <h3 class="panel-title">Top Selling Products</h3>
+          <p class="panel-subtitle">By quantity sold (confirmed orders)</p>
+        </div>
+        <a href="/orders/" class="btn-ghost btn-sm">View All</a>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="topProductsChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Recent orders -->
+    <div class="panel-card">
+      <div class="panel-header">
+        <div>
+          <h3 class="panel-title">Recent Orders</h3>
+          <p class="panel-subtitle">Last 5 orders across all statuses</p>
+        </div>
+        <a href="/orders/" class="btn-ghost btn-sm">All Orders</a>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Customer</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in recent_orders %}
+            <tr>
+              <td>
+                <a href="/orders/{{ row.order.id }}/" style="font-weight:600;color:var(--color-primary-light);">
+                  #{{ row.order.id }}
+                </a>
+              </td>
+              <td>{{ row.order.customer.name|default:"—" }}</td>
+              <td>NPR {{ row.total|floatformat:0 }}</td>
+              <td>
+                {% if row.order.status == "CONFIRMED" %}
+                  <span class="badge badge-success">Confirmed</span>
+                {% elif row.order.status == "CANCELLED" %}
+                  <span class="badge badge-danger">Cancelled</span>
+                {% else %}
+                  <span class="badge badge-neutral">Draft</span>
+                {% endif %}
+              </td>
+              <td class="text-muted">{{ row.order.created_at|date:"d M, H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="empty-row">No orders yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right column -->
+  <div class="dashboard-col-side">
+
+    <!-- Quick actions -->
+    <div class="panel-card">
+      <div class="panel-header">
+        <h3 class="panel-title">Quick Actions</h3>
+      </div>
+      <div class="quick-actions">
+        <a href="/catalog/products/add/" class="quick-action-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Product
+        </a>
+        <a href="/orders/add/" class="quick-action-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          New Order
+        </a>
+        <a href="/procurement/purchases/add/" class="quick-action-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          New Purchase
+        </a>
+        <a href="/analytics/eoq/" class="quick-action-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+          EOQ Report
+        </a>
+      </div>
+    </div>
+
+    <!-- Revenue trend -->
+    <div class="panel-card">
+      <div class="panel-header">
+        <div>
+          <h3 class="panel-title">Revenue Trend</h3>
+          <p class="panel-subtitle">
+            {% if month_change is not None %}
+              This month: NPR {{ this_month_revenue|floatformat:0 }}
+              &nbsp;
+              <span style="font-weight:700;color:{% if month_change > 0 %}var(--color-success){% elif month_change < 0 %}var(--color-danger){% else %}var(--color-text-muted){% endif %};">
+                {% if month_change > 0 %}▲ +{{ month_change }}%{% elif month_change < 0 %}▼ {{ month_change }}%{% else %}→ 0%{% endif %}
+              </span>
+              vs last month
+            {% else %}
+              Monthly sales performance
+            {% endif %}
+          </p>
+        </div>
+        <a href="/analytics/trends/" class="btn-ghost btn-sm">Details</a>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="miniTrendChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const C = window.LophoroChart;
+
+  /* ── Top Products ───────────────────────────────────── */
+  new Chart(document.getElementById('topProductsChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ top_labels|safe }},
+      datasets: [{
+        label: 'Qty Sold',
+        data: {{ top_qty|safe }},
+        backgroundColor(ctx) {
+          return C.barGradient(ctx.chart.ctx, ctx.chart.chartArea);
+        },
+        borderRadius: { topLeft: 8, topRight: 8 },
+        borderSkipped: false,
+        maxBarThickness: 56,
+        hoverBackgroundColor: '#914D22',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        ...C.animation,
+        delay(ctx) { return ctx.dataIndex * 120; },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          ...C.tooltip((item) => `  ${item.parsed.y} units sold`),
+        },
+      },
+      scales: C.scales(),
+    },
+  });
+
+  /* ── Revenue Trend ──────────────────────────────────── */
+  const trendLabels = {{ trend_labels|safe }};
+  const trendValues = {{ trend_values|safe }};
+  const isSingle    = trendLabels.length <= 1;
+
+  new Chart(document.getElementById('miniTrendChart'), {
+    type: isSingle ? 'bar' : 'line',
+    data: {
+      labels: trendLabels,
+      datasets: [{
+        label: 'Revenue (NPR)',
+        data: trendValues,
+        backgroundColor(ctx) {
+          return C.barGradient(ctx.chart.ctx, ctx.chart.chartArea);
+        },
+        borderRadius: { topLeft: 8, topRight: 8 },
+        borderSkipped: false,
+        maxBarThickness: 80,
+        hoverBackgroundColor: '#914D22',
+        borderColor: '#914D22',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.42,
+        pointBackgroundColor: '#3D1A0A',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2.5,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointHoverBackgroundColor: '#914D22',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        ...C.animation,
+        delay(ctx) { return ctx.dataIndex * 120; },
+      },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          ...C.tooltip((item) => `  NPR ${item.parsed.y.toLocaleString()}`),
+        },
+      },
+      scales: C.scales(),
+    },
+  });
+});
+</script>
+{% endblock %}

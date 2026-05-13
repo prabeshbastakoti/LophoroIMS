@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Purchases — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Purchases{% endblock %}
+
+{% block content %}
+<div class="table-card" data-aos="fade-up">
+  <div class="table-toolbar">
+    <div>
+      <h2 class="table-title">Purchase Management</h2>
+      <p class="table-subtitle">Track procurement orders and stock intake</p>
+    </div>
+    <div style="display:flex;gap:var(--space-3);">
+      <a href="/analytics/export/purchases/excel/" class="btn-secondary" title="Export Excel">
+        <i data-lucide="file-spreadsheet" width="15" height="15"></i> Excel
+      </a>
+      <a href="/analytics/export/purchases/pdf/" class="btn-secondary" title="Export PDF">
+        <i data-lucide="file-text" width="15" height="15"></i> PDF
+      </a>
+      <a href="/procurement/purchases/add/" class="btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Create Purchase
+      </a>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Purchase</th>
+          <th>Supplier</th>
+          <th>Created By</th>
+          <th>Status</th>
+          <th>Items</th>
+          <th>Created At</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for purchase in purchases %}
+        <tr>
+          <td><strong>#{{ purchase.id }}</strong></td>
+          <td>{{ purchase.supplier.name }}</td>
+          <td>{{ purchase.created_by.username }}</td>
+          <td>
+            {% if purchase.status == "RECEIVED" %}
+              <span class="badge badge-success">Received</span>
+            {% elif purchase.status == "ORDERED" %}
+              <span class="badge badge-primary">Ordered</span>
+            {% elif purchase.status == "PENDING" %}
+              <span class="badge badge-warning">Pending</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ purchase.status }}</span>
+            {% endif %}
+          </td>
+          <td>{{ purchase.items.count }}</td>
+          <td class="text-muted">{{ purchase.created_at|date:"Y-m-d H:i" }}</td>
+          <td>
+            <a href="/procurement/purchases/{{ purchase.id }}/" class="btn-table-view">View</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="empty-row">No purchases found. Create your first purchase order.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

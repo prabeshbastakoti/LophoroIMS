@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Users — Lophoro IMS{% endblock %}
+{% block breadcrumb %}User Management{% endblock %}
+
+{% block content %}
+<div class="table-card" data-aos="fade-up">
+  <div class="table-toolbar">
+    <div>
+      <h2 class="table-title">User Management</h2>
+      <p class="table-subtitle">Manage system users and access roles</p>
+    </div>
+    <a href="/accounts/users/add/" class="btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add User
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Active</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user_obj in users %}
+        <tr>
+          <td class="text-muted">{{ user_obj.id }}</td>
+          <td>
+            <div class="user-cell">
+              <span class="user-cell-avatar">{{ user_obj.username|first|upper }}</span>
+              <span><strong>{{ user_obj.username }}</strong></span>
+            </div>
+          </td>
+          <td>
+            {% if user_obj.role == "ADMIN" %}
+              <span class="badge badge-primary">Administrator</span>
+            {% else %}
+              <span class="badge badge-neutral">Staff</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if user_obj.is_active %}
+              <span class="badge badge-success">Active</span>
+            {% else %}
+              <span class="badge badge-danger">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="actions-cell">
+            <a href="/accounts/users/{{ user_obj.id }}/edit/" class="btn-table-edit">Edit</a>
+            <a href="/accounts/users/{{ user_obj.id }}/reset-password/" class="btn-table-view">Reset PW</a>
+            {% if user_obj != request.user %}
+            <form method="POST" action="/accounts/users/{{ user_obj.id }}/delete/" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn-table-delete" onclick="return confirm('Delete user \'{{ user_obj.username }}\'? This cannot be undone.')">Delete</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="empty-row">No users found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

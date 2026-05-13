@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — Lophoro IMS{% endblock %}
+{% block breadcrumb %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="form-card form-card-narrow" data-aos="fade-up">
+  <div class="form-card-header">
+    <div>
+      <h2 class="form-card-title">{{ page_title }}</h2>
+      <p class="form-card-subtitle">Manage system user accounts and roles</p>
+    </div>
+    <a href="/accounts/users/" class="btn-secondary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Back to Users
+    </a>
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    <div class="form-grid">
+      {% if mode == "create" %}
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          {{ form.username }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          {{ form.role }}
+        </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Password</label>
+          {{ form.password }}
+        </div>
+      {% else %}
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          {{ form.username }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          {{ form.role }}
+        </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Account Status</label>
+          {{ form.is_active }}
+        </div>
+      {% endif %}
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn-primary">Save User</button>
+      <a href="/accounts/users/" class="btn-ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}EOQ Report — Lophoro IMS{% endblock %}
+{% block breadcrumb %}EOQ Report{% endblock %}
+
+{% block content %}
+<div style="display:flex;flex-direction:column;gap:var(--space-8);">
+
+<!-- Explainer -->
+<div class="panel-card panel-card-explainer" data-aos="fade-up">
+  <div class="explainer-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+      <line x1="12" y1="17" x2="12" y2="21"/>
+    </svg>
+  </div>
+  <div>
+    <h3 class="explainer-title">Economic Order Quantity (EOQ)</h3>
+    <p class="explainer-desc">
+      EOQ = &radic;(2 &times; Annual Demand &times; Ordering Cost &divide; Holding Cost).
+      This is the optimal reorder quantity that minimises total inventory cost.
+    </p>
+  </div>
+</div>
+
+<!-- EOQ cards -->
+<div class="eoq-grid" data-aos="fade-up" data-aos-delay="60">
+  {% for item in report_data %}
+  <div class="eoq-card">
+    <div class="eoq-card-header">
+      <span class="eoq-product-name">{{ item.product.name }}</span>
+      <span class="badge {% if item.eoq %}badge-success{% else %}badge-neutral{% endif %}">
+        {% if item.eoq %}Active{% else %}No Data{% endif %}
+      </span>
+    </div>
+    <div class="eoq-card-body">
+      <div class="eoq-value">
+        {% if item.eoq %}
+          {{ item.eoq }}
+          <span class="eoq-unit">units</span>
+        {% else %}
+          <span class="eoq-na">—</span>
+        {% endif %}
+      </div>
+      <p class="eoq-value-label">Recommended Order Quantity</p>
+    </div>
+    <div class="eoq-params">
+      <div class="eoq-param">
+        <span class="eoq-param-label">Annual Demand
+          {% if item.demand_source == "orders" %}
+            <span class="badge badge-success" style="font-size:9px;padding:1px 6px;margin-left:4px;">From Sales</span>
+          {% elif item.demand_source == "manual" %}
+            <span class="badge badge-warning" style="font-size:9px;padding:1px 6px;margin-left:4px;">Manual</span>
+          {% else %}
+            <span class="badge badge-neutral" style="font-size:9px;padding:1px 6px;margin-left:4px;">No Data</span>
+          {% endif %}
+        </span>
+        <span class="eoq-param-val">{{ item.annual_demand }}</span>
+      </div>
+      <div class="eoq-param">
+        <span class="eoq-param-label">Ordering Cost</span>
+        <span class="eoq-param-val">NPR {{ item.product.ordering_cost }}</span>
+      </div>
+      <div class="eoq-param">
+        <span class="eoq-param-label">Holding Cost</span>
+        <span class="eoq-param-val">NPR {{ item.product.holding_cost }}</span>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty-state">
+    <p>No product data available for EOQ calculation.</p>
+  </div>
+  {% endfor %}
+</div>
+
+</div>
+{% endblock %}

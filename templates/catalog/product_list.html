@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Products — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Products{% endblock %}
+
+{% block content %}
+<div class="table-card" data-aos="fade-up">
+  <div class="table-toolbar">
+    <div>
+      <h2 class="table-title">Product Management</h2>
+      <p class="table-subtitle">All catalog products with pricing and stock levels</p>
+    </div>
+    <a href="/catalog/products/add/" class="btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add Product
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Image</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th>Selling Price</th>
+          <th>Unit Cost</th>
+          <th>Stock</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+        <tr>
+          <td class="text-muted">{{ product.id }}</td>
+          <td>
+            {% if product.image %}
+              <img src="{{ product.image.url }}" alt="{{ product.name }}" style="height:40px;width:40px;object-fit:cover;border-radius:6px;">
+            {% else %}
+              <span class="user-cell-avatar" style="font-size:13px;">{{ product.name|first|upper }}</span>
+            {% endif %}
+          </td>
+          <td><strong>{{ product.name }}</strong></td>
+          <td>{{ product.category.name }}</td>
+          <td>NPR {{ product.selling_price }}</td>
+          <td>NPR {{ product.unit_cost }}</td>
+          <td>
+            {% if product.current_stock < 10 %}
+              <span class="badge badge-danger">{{ product.current_stock }}</span>
+            {% elif product.current_stock < 25 %}
+              <span class="badge badge-warning">{{ product.current_stock }}</span>
+            {% else %}
+              <span class="badge badge-success">{{ product.current_stock }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="/catalog/products/{{ product.id }}/edit/" class="btn-table-edit">Edit</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="empty-row">No products found. Add your first product to get started.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

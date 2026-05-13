@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Categories — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Categories{% endblock %}
+
+{% block content %}
+<div class="table-card" data-aos="fade-up">
+  <div class="table-toolbar">
+    <div>
+      <h2 class="table-title">Category Management</h2>
+      <p class="table-subtitle">Organise your product catalog by category</p>
+    </div>
+    <a href="/catalog/categories/add/" class="btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add Category
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Category Name</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for category in categories %}
+        <tr>
+          <td class="text-muted">{{ category.id }}</td>
+          <td><strong>{{ category.name }}</strong></td>
+          <td>
+            <a href="/catalog/categories/{{ category.id }}/edit/" class="btn-table-edit">Edit</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="empty-row">No categories found. Add your first category.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

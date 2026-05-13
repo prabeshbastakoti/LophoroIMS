@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Sales Trends — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Sales Trends{% endblock %}
+
+{% block content %}
+<div style="display:flex;flex-direction:column;gap:var(--space-8);">
+
+<!-- Chart panel -->
+<div class="panel-card" data-aos="fade-up">
+  <div class="panel-header">
+    <div>
+      <h3 class="panel-title">Monthly Revenue Trend</h3>
+      <p class="panel-subtitle">Sales revenue analysis — Algorithm: Growth % = (Current − Previous) / Previous × 100</p>
+    </div>
+  </div>
+  <div class="chart-wrap" style="height:280px;">
+    <canvas id="salesTrendChart"></canvas>
+  </div>
+</div>
+
+<!-- Trend table -->
+<div class="table-card" data-aos="fade-up" data-aos-delay="60">
+  <div class="table-toolbar">
+    <div>
+      <h2 class="table-title">Monthly Breakdown</h2>
+      <p class="table-subtitle">Revenue and growth rate per month</p>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Revenue (NPR)</th>
+          <th>Growth %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td><strong>{{ r.month }}</strong></td>
+          <td>{{ r.revenue|floatformat:2 }}</td>
+          <td>
+            {% if r.growth is None %}
+              <span class="text-muted">—</span>
+            {% elif r.growth > 0 %}
+              <span class="growth-up">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="18 15 12 9 6 15"/>
+                </svg>
+                +{{ r.growth }}%
+              </span>
+            {% elif r.growth < 0 %}
+              <span class="growth-down">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                {{ r.growth }}%
+              </span>
+            {% else %}
+              <span class="text-muted">0%</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="empty-row">No sales data available yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const C       = window.LophoroChart;
+  const labels  = {{ labels|safe }};
+  const revenue = {{ revenue|safe }};
+  /* Per-row growth metadata */
+  const growthData = [{% for r in rows %}"{% if r.growth is None %}—{% elif r.growth > 0 %}+{{ r.growth }}%{% else %}{{ r.growth }}%{% endif %}"{% if not forloop.last %},{% endif %}{% endfor %}];
+
+  const isSinglePoint = labels.length <= 1;
+
+  new Chart(document.getElementById('salesTrendChart'), {
+    type: isSinglePoint ? 'bar' : 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Revenue (NPR)',
+        data: revenue,
+        /* Bar styles (used when single point) */
+        backgroundColor(ctx) {
+          return C.barGradient(ctx.chart.ctx, ctx.chart.chartArea);
+        },
+        borderRadius: { topLeft: 8, topRight: 8 },
+        borderSkipped: false,
+        maxBarThickness: 80,
+        hoverBackgroundColor: '#914D22',
+        /* Line styles (used when multiple points) */
+        borderColor: '#914D22',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.42,
+        pointBackgroundColor: '#3D1A0A',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2.5,
+        pointRadius: 5,
+        pointHoverRadius: 8,
+        pointHoverBackgroundColor: '#914D22',
+        pointHoverBorderColor: '#EDD9C0',
+        pointHoverBorderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        ...C.animation,
+        delay(ctx) { return ctx.dataIndex * 120; },
+      },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          ...C.tooltip((item) => [
+            `  NPR ${item.parsed.y.toLocaleString()}`,
+            `  Growth: ${growthData[item.dataIndex] || '—'}`,
+          ]),
+        },
+      },
+      scales: C.scales(),
+    },
+  });
+});
+</script>
+{% endblock %}

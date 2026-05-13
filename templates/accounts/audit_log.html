@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Audit Log — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Audit Log{% endblock %}
+
+{% block content %}
+<div class="table-card" data-aos="fade-up">
+  <div class="table-toolbar">
+    <div>
+      <h2 class="table-title">Audit Log</h2>
+      <p class="table-subtitle">Recent system activity — last 500 entries</p>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Model</th>
+          <th>Object</th>
+          <th>Changes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-muted" style="white-space:nowrap;">{{ log.timestamp|date:"d M Y, H:i" }}</td>
+          <td><strong>{{ log.user.username|default:"—" }}</strong></td>
+          <td>
+            {% if log.action == "CREATE" %}
+              <span class="badge badge-success">Create</span>
+            {% elif log.action == "UPDATE" %}
+              <span class="badge badge-warning">Update</span>
+            {% else %}
+              <span class="badge badge-danger">Delete</span>
+            {% endif %}
+          </td>
+          <td><span class="badge badge-neutral">{{ log.model_name }}</span></td>
+          <td>{{ log.object_repr }}</td>
+          <td class="text-muted">{{ log.changes|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="empty-row">No audit entries yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

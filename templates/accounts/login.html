@@ -1,0 +1,289 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Lophoro IMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js" defer></script>
+  <link rel="stylesheet" href="{% static 'css/lophoro-theme.css' %}">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh; display: flex;
+      font-family: 'Montserrat', sans-serif;
+      background: #3D1A0A;
+    }
+
+    /* ── Left brand panel ───────────────────────────────── */
+    .login-left {
+      flex: 0 0 55%;
+      background: linear-gradient(150deg, #3D1A0A 0%, #1e0a03 100%);
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      padding: 52px 56px;
+      position: relative; overflow: hidden;
+    }
+    .login-left::before {
+      content: ''; position: absolute;
+      width: 500px; height: 500px;
+      border: 60px solid rgba(255,255,255,0.04);
+      border-radius: 50%; top: -160px; right: -160px;
+    }
+    .login-left::after {
+      content: ''; position: absolute;
+      width: 340px; height: 340px;
+      border: 40px solid rgba(255,255,255,0.04);
+      border-radius: 50%; bottom: -100px; left: -80px;
+    }
+
+    .login-logo-wrap { display: flex; align-items: center; gap: 14px; z-index: 1; }
+    .login-logo-img  { height: 46px; width: auto; object-fit: contain; }
+    .login-logo-text { font-size: 22px; font-weight: 800; color: #EDD9C0; letter-spacing: -0.5px; }
+    .login-logo-text span { color: #914D22; }
+
+    .login-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 36px 0 16px; z-index: 1; }
+    .login-tagline { font-size: 40px; font-weight: 800; color: #fff; line-height: 1.15; letter-spacing: -1px; margin-bottom: 18px; }
+    .login-tagline em { font-style: normal; color: #EDD9C0; }
+    .login-desc { font-size: 14px; color: rgba(255,255,255,0.50); line-height: 1.85; max-width: 360px; }
+
+    .login-features { display: flex; flex-direction: column; gap: 11px; margin-top: 32px; }
+    .login-feature { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 500; }
+    .login-feature-dot { width: 6px; height: 6px; border-radius: 50%; background: #914D22; flex-shrink: 0; }
+
+    .login-left-footer { font-size: 12px; color: rgba(255,255,255,0.28); z-index: 1; }
+
+    /* ── Right form panel ───────────────────────────────── */
+    .login-right {
+      flex: 1;
+      background: #FBF8F4;          /* cream-pale — solid, no variable */
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px 52px;
+    }
+
+    .login-form-wrap { width: 100%; max-width: 370px; }
+
+    .login-form-title {
+      font-size: 27px; font-weight: 800;
+      color: #1E0E05;               /* text-dark — solid */
+      letter-spacing: -0.5px; margin-bottom: 6px;
+    }
+    .login-form-sub {
+      font-size: 13.5px; color: #9B7B65;   /* text-muted — solid */
+      margin-bottom: 28px; font-weight: 500;
+    }
+
+    /* Role toggle pill */
+    .role-toggle {
+      display: flex; background: #F7EFE5;   /* cream-light — solid */
+      border-radius: 50px; padding: 4px;
+      margin-bottom: 26px; border: 1.5px solid #E2CDB8;
+    }
+    .role-toggle input { display: none; }
+    .role-toggle label {
+      flex: 1; text-align: center;
+      padding: 9px 16px; border-radius: 50px;
+      font-size: 13px; font-weight: 600;
+      color: #9B7B65; cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      transition: all 0.22s ease;
+    }
+    .role-toggle input:checked + label {
+      background: #3D1A0A;
+      color: #EDD9C0;
+      box-shadow: 0 4px 14px rgba(61,26,10,0.35);
+    }
+
+    /* Fields */
+    .login-field { margin-bottom: 18px; }
+    .login-field label {
+      display: block; font-size: 11px; font-weight: 700;
+      color: #5C2E12; text-transform: uppercase;
+      letter-spacing: 0.7px; margin-bottom: 8px;
+    }
+    .login-input-wrap { position: relative; }
+    .field-icon {
+      position: absolute; left: 13px; top: 50%;
+      transform: translateY(-50%);
+      color: #9B7B65; pointer-events: none;
+      display: flex; align-items: center;
+    }
+
+    /* ─ THE FIX: explicit white bg + dark text ─ */
+    .login-input {
+      width: 100%;
+      padding: 13px 14px 13px 42px;
+      background: #FFFFFF;           /* white — fully opaque */
+      border: 1.5px solid #E2CDB8;
+      border-radius: 12px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1E0E05;                /* near-black text */
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .login-input::placeholder { color: #C4A882; font-weight: 400; }
+    .login-input:focus {
+      border-color: #914D22;
+      background: #FFFDF9;
+      box-shadow: 0 0 0 3px rgba(145,77,34,0.12);
+    }
+
+    /* Error banner */
+    .login-error {
+      background: #fff5f5; border: 1px solid #fecaca;
+      border-radius: 10px; padding: 11px 14px;
+      color: #b91c1c; font-size: 13px; margin-bottom: 18px;
+      display: flex; align-items: center; gap: 8px; font-weight: 500;
+    }
+
+    /* Submit button */
+    .login-submit {
+      width: 100%; padding: 14px;
+      background: #3D1A0A;
+      color: #EDD9C0; border: none; border-radius: 12px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px; font-weight: 700; letter-spacing: 0.4px;
+      cursor: pointer; margin-top: 10px;
+      transition: background 0.2s, transform 0.12s, box-shadow 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .login-submit:hover {
+      background: #5C2E12;
+      box-shadow: 0 8px 24px rgba(61,26,10,0.32);
+      transform: translateY(-1px);
+    }
+    .login-submit:active { transform: scale(0.98); }
+
+    .login-footer-note {
+      text-align: center; margin-top: 22px;
+      font-size: 11.5px; color: #9B7B65; line-height: 1.6;
+    }
+
+    /* ── Tablet (≤768px) ── */
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      .login-left {
+        flex: none; padding: 32px 28px; min-height: 180px;
+      }
+      .login-tagline { font-size: 24px; margin-bottom: 12px; }
+      .login-desc    { font-size: 13px; }
+      .login-features, .login-left-footer { display: none; }
+      .login-right   { padding: 32px 24px; flex: 1; }
+      .login-form-wrap { max-width: 100%; }
+    }
+
+    /* ── Small phone (≤480px) ── */
+    @media (max-width: 480px) {
+      .login-left  { padding: 24px 20px; min-height: 140px; }
+      .login-tagline { font-size: 20px; }
+      .login-logo-text { font-size: 18px; }
+      .login-right { padding: 24px 20px; }
+      .login-form-title { font-size: 22px; }
+
+      /* Bigger touch targets */
+      .login-input  { padding: 15px 14px 15px 44px; font-size: 16px; }
+      .login-submit { padding: 16px; font-size: 15px; }
+      .role-toggle label { padding: 11px 12px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Left brand panel -->
+<div class="login-left">
+  <div class="login-logo-wrap">
+    <img src="{% static 'images/logo.png' %}" alt="Lophoro Decor" class="login-logo-img"
+         onerror="this.style.display='none'">
+    <span class="login-logo-text">Lophoro<span>IMS</span></span>
+  </div>
+
+  <div class="login-hero">
+    <h1 class="login-tagline">
+      Elegant <em>Inventory</em><br>Management
+    </h1>
+    <p class="login-desc">
+      A premium inventory and order management system crafted for Lophoro Decor —
+      Bharatpur's finest interior decor destination.
+    </p>
+    <div class="login-features">
+      <div class="login-feature"><span class="login-feature-dot"></span>Real-time inventory tracking</div>
+      <div class="login-feature"><span class="login-feature-dot"></span>EOQ & ABC analytics algorithms</div>
+      <div class="login-feature"><span class="login-feature-dot"></span>Sales trend intelligence</div>
+      <div class="login-feature"><span class="login-feature-dot"></span>Role-based access control</div>
+    </div>
+  </div>
+
+  <div class="login-left-footer">
+    &copy; 2025 Lophoro Decor &mdash; Bharatpur, Chitwan, Nepal
+  </div>
+</div>
+
+<!-- Right form panel -->
+<div class="login-right">
+  <div class="login-form-wrap">
+    <h2 class="login-form-title">Welcome back</h2>
+    <p class="login-form-sub">Sign in to your Lophoro IMS account</p>
+
+    {% if messages %}
+      {% for message in messages %}
+      <div class="login-error">
+        <i data-lucide="alert-circle" width="16" height="16"></i>
+        {{ message }}
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+
+      <!-- Role selector -->
+      <div class="role-toggle">
+        <input type="radio" id="role-admin" name="role" value="ADMIN" required checked>
+        <label for="role-admin">Administrator</label>
+        <input type="radio" id="role-staff" name="role" value="STAFF">
+        <label for="role-staff">Staff</label>
+      </div>
+
+      <!-- Username -->
+      <div class="login-field">
+        <label for="username">Username</label>
+        <div class="login-input-wrap">
+          <span class="field-icon"><i data-lucide="user" width="16" height="16"></i></span>
+          <input type="text" id="username" name="username" class="login-input"
+                 placeholder="Enter your username" autocomplete="username" required>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="login-field">
+        <label for="password">Password</label>
+        <div class="login-input-wrap">
+          <span class="field-icon"><i data-lucide="lock" width="16" height="16"></i></span>
+          <input type="password" id="password" name="password" class="login-input"
+                 placeholder="Enter your password" autocomplete="current-password" required>
+        </div>
+      </div>
+
+      <button type="submit" class="login-submit">Sign In</button>
+    </form>
+
+    <p class="login-footer-note">
+      Lophoro IMS &mdash; BSc CSIT 7th Semester Project, Tribhuvan University
+    </p>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Inventory — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Inventory{% endblock %}
+
+{% block content %}
+
+{% if low_stock %}
+<div class="alert-banner alert-banner-warning" data-aos="fade-down">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+  <strong>{{ low_stock.count }} product(s)</strong> have low stock (below 10 units). Please review and reorder.
+</div>
+{% endif %}
+
+<div class="table-card" data-aos="fade-up">
+  <div class="table-toolbar">
+    <div>
+      <h2 class="table-title">Current Stock Levels</h2>
+      <p class="table-subtitle">Real-time inventory across all products</p>
+    </div>
+    <div style="display:flex;gap:var(--space-3);">
+      <a href="/analytics/export/inventory/excel/" class="btn-secondary" title="Export Excel">
+        <i data-lucide="file-spreadsheet" width="15" height="15"></i> Excel
+      </a>
+      <a href="/analytics/export/inventory/pdf/" class="btn-secondary" title="Export PDF">
+        <i data-lucide="file-text" width="15" height="15"></i> PDF
+      </a>
+      <a href="/inventory/movements/" class="btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
+        Stock Movements
+      </a>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th>Current Stock</th>
+          <th>Selling Price</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+        <tr>
+          <td class="text-muted">{{ product.id }}</td>
+          <td><strong>{{ product.name }}</strong></td>
+          <td>{{ product.category.name }}</td>
+          <td>{{ product.current_stock }}</td>
+          <td>NPR {{ product.selling_price }}</td>
+          <td>
+            {% if product.current_stock < 10 %}
+              <span class="badge badge-danger">Low Stock</span>
+            {% elif product.current_stock < 25 %}
+              <span class="badge badge-warning">Moderate</span>
+            {% else %}
+              <span class="badge badge-success">In Stock</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="empty-row">No products in inventory yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

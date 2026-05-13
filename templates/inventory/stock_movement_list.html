@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Stock Movements — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Stock Movements{% endblock %}
+
+{% block content %}
+<div class="table-card" data-aos="fade-up">
+  <div class="table-toolbar">
+    <div>
+      <h2 class="table-title">Stock Movement History</h2>
+      <p class="table-subtitle">All stock in/out transactions recorded in the system</p>
+    </div>
+    <a href="/inventory/" class="btn-secondary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Current Stock
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Product</th>
+          <th>Movement Type</th>
+          <th>Quantity</th>
+          <th>Date &amp; Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for movement in movements %}
+        <tr>
+          <td class="text-muted">{{ movement.id }}</td>
+          <td><strong>{{ movement.product.name }}</strong></td>
+          <td>
+            {% if movement.movement_type == "IN" %}
+              <span class="badge badge-success">Stock In</span>
+            {% else %}
+              <span class="badge badge-danger">Stock Out</span>
+            {% endif %}
+          </td>
+          <td>{{ movement.quantity }}</td>
+          <td class="text-muted">{{ movement.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="empty-row">No stock movements recorded yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Generate Invoice — Order #{{ order.id }} — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Invoice — Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div style="display:flex;flex-direction:column;gap:var(--space-8);" data-aos="fade-up">
+
+  <!-- Issued invoices (shown if any exist) -->
+  {% if existing_invoices %}
+  <div class="table-card">
+    <div class="table-toolbar" style="padding:var(--space-4) var(--space-5);">
+      <div>
+        <h3 class="table-title" style="font-size:15px;">Issued Invoices</h3>
+        <p class="table-subtitle" style="font-size:12px;">Previously issued invoices for this order. Click View to open in browser.</p>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Invoice No.</th>
+            <th>Bill Date</th>
+            <th>Payment Mode</th>
+            <th>Discount</th>
+            <th>Staff</th>
+            <th>Issued By</th>
+            <th>Issued At</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in existing_invoices %}
+          <tr>
+            <td><strong>#{{ inv.invoice_no }}</strong></td>
+            <td>{{ inv.bill_date|date:"d M Y" }}</td>
+            <td>{{ inv.payment_mode }}</td>
+            <td>{% if inv.discount %}NPR {{ inv.discount }}{% else %}—{% endif %}</td>
+            <td>{{ inv.staff_name }}</td>
+            <td class="text-muted">{{ inv.issued_by.username|default:"—" }}</td>
+            <td class="text-muted">{{ inv.issued_at|date:"d M Y, H:i" }}</td>
+            <td>
+              <a href="/orders/invoices/{{ inv.id }}/pdf/" target="_blank" class="btn-table-edit">View PDF</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Order summary -->
+  <div class="form-card">
+    <div class="form-card-header">
+      <div>
+        <h2 class="form-card-title">
+          {% if existing_invoices %}Issue Another Invoice{% else %}Generate Tax Invoice{% endif %}
+        </h2>
+        <p class="form-card-subtitle">
+          Order #{{ order.id }}
+          {% if order.customer %}&nbsp;·&nbsp;<strong>{{ order.customer.name }}</strong>{% endif %}
+          &nbsp;·&nbsp; {{ order.created_at|date:"d M Y" }}
+        </p>
+      </div>
+      <a href="/orders/{{ order.id }}/" class="btn-secondary">← Back to Order</a>
+    </div>
+
+    <!-- Items preview -->
+    <div class="table-responsive" style="margin-top:var(--space-4);">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th style="text-align:right;">Unit Price</th>
+            <th style="text-align:right;">Line Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order.items.all %}
+          <tr>
+            <td class="text-muted">{{ forloop.counter }}</td>
+            <td><strong>{{ item.product.name }}</strong></td>
+            <td>{{ item.quantity }}</td>
+            <td style="text-align:right;">NPR {{ item.product.selling_price }}</td>
+            <td style="text-align:right;">NPR {% widthratio item.quantity 1 item.product.selling_price %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bill details form -->
+  <div class="form-card form-card-narrow">
+    <div class="form-card-header">
+      <div>
+        <h3 class="form-card-title" style="font-size:15px;">Invoice Details</h3>
+        <p class="form-card-subtitle">Fill in the billing information. The PDF will open in a new tab.</p>
+      </div>
+    </div>
+
+    <form method="POST">
+      {% csrf_token %}
+
+      {% if form.errors %}
+      <div style="padding:var(--space-3) var(--space-4);background:#fef2f2;border:1px solid #fca5a5;border-radius:var(--radius-md);margin-bottom:var(--space-4);font-size:13px;color:#991b1b;">
+        {% for field in form %}{% for error in field.errors %}<div>{{ field.label }}: {{ error }}</div>{% endfor %}{% endfor %}
+        {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Invoice No. <span style="color:var(--color-danger)">*</span></label>
+          {{ form.invoice_no }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Mode</label>
+          {{ form.payment_mode }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Transaction Date</label>
+          {{ form.transaction_date }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bill Date</label>
+          {{ form.bill_date }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Discount (NPR)</label>
+          {{ form.discount }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Staff Name <span style="color:var(--color-danger)">*</span></label>
+          {{ form.staff_name }}
+        </div>
+      </div>
+
+      {% if order.customer and not order.customer.buyer_pan %}
+      <div style="padding:var(--space-3) var(--space-4);background:#fffbeb;border:1px solid #f59e0b;border-radius:var(--radius-md);margin-bottom:var(--space-4);font-size:13px;color:#92400e;">
+        <strong>Note:</strong> This customer has no PAN on record.
+        <a href="/orders/customers/{{ order.customer.id }}/edit/" style="color:#92400e;text-decoration:underline;">Add it here</a> before generating if required.
+      </div>
+      {% endif %}
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          Issue Invoice &amp; Open PDF
+        </button>
+        <a href="/orders/{{ order.id }}/" class="btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

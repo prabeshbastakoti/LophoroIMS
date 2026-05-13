@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.id }} — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div style="display:flex;flex-direction:column;gap:var(--space-8);" data-aos="fade-up">
+
+  <!-- Header card -->
+  <div class="form-card">
+    <div class="form-card-header">
+      <div>
+        <h2 class="form-card-title">Order #{{ order.id }}</h2>
+        <p class="form-card-subtitle">
+          {% if order.customer %}Customer: <strong>{{ order.customer.name }}</strong> &nbsp;·&nbsp;{% endif %}
+          By {{ order.created_by.username }} &nbsp;·&nbsp; {{ order.created_at|date:"d M Y, H:i" }}
+        </p>
+      </div>
+      <div style="display:flex;gap:var(--space-3);align-items:center;">
+        {% if order.status == "DRAFT" %}
+          <form method="POST" action="/orders/{{ order.id }}/confirm/" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary">Confirm Order</button>
+          </form>
+          <form method="POST" action="/orders/{{ order.id }}/cancel/" style="display:inline;" onsubmit="return confirm('Cancel this order?')">
+            {% csrf_token %}
+            <button type="submit" class="btn-ghost" style="border-color:var(--color-danger);color:var(--color-danger);">Cancel Order</button>
+          </form>
+        {% endif %}
+        {% if order.status == "CONFIRMED" %}
+          <a href="/orders/{{ order.id }}/bill/" class="btn-secondary" title="Generate Tax Invoice PDF">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Generate Invoice
+          </a>
+        {% endif %}
+        <a href="/orders/" class="btn-secondary">← Back</a>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-top:var(--space-4);">
+      <div>
+        <span class="form-label">Status</span>
+        <div style="margin-top:4px;">
+          {% if order.status == "CONFIRMED" %}<span class="badge badge-success">Confirmed</span>
+          {% elif order.status == "CANCELLED" %}<span class="badge badge-danger">Cancelled</span>
+          {% else %}<span class="badge badge-neutral">Draft</span>{% endif %}
+        </div>
+      </div>
+      <div>
+        <span class="form-label">Customer</span>
+        <div style="margin-top:4px;font-weight:600;">{{ order.customer.name|default:"—" }}</div>
+      </div>
+      <div>
+        <span class="form-label">Created By</span>
+        <div style="margin-top:4px;font-weight:600;">{{ order.created_by.username }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="table-card">
+    <div class="table-toolbar" style="padding:var(--space-4) var(--space-5);">
+      <h3 class="table-title" style="font-size:15px;">Order Items</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Line Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order.items.all %}
+          <tr>
+            <td><strong>{{ item.product.name }}</strong></td>
+            <td>{{ item.quantity }}</td>
+            <td>NPR {{ item.product.selling_price }}</td>
+            <td>NPR {{ item.quantity|floatformat:0 }} × {{ item.product.selling_price }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="empty-row">No items.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Return form (confirmed orders only) -->
+  {% if return_form %}
+  <div class="form-card">
+    <div class="form-card-header">
+      <div>
+        <h3 class="form-card-title" style="font-size:15px;">Process a Return</h3>
+        <p class="form-card-subtitle">Select the product and quantity being returned. Stock will be added back automatically.</p>
+      </div>
+    </div>
+    <form method="POST" action="/orders/{{ order.id }}/return/">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Product</label>
+          {{ return_form.product }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          {{ return_form.quantity }}
+        </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Reason</label>
+          {{ return_form.reason }}
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Submit Return</button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Returns log -->
+  {% if order.returns.exists %}
+  <div class="table-card">
+    <div class="table-toolbar" style="padding:var(--space-4) var(--space-5);">
+      <h3 class="table-title" style="font-size:15px;">Returns</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr><th>Product</th><th>Qty</th><th>Reason</th><th>Processed By</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {% for r in order.returns.all %}
+          <tr>
+            <td>{{ r.product.name }}</td>
+            <td>{{ r.quantity }}</td>
+            <td>{{ r.reason|default:"—" }}</td>
+            <td>{{ r.processed_by.username|default:"—" }}</td>
+            <td class="text-muted">{{ r.returned_at|date:"d M Y, H:i" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Issued invoices -->
+  {% if order.invoices.exists %}
+  <div class="table-card">
+    <div class="table-toolbar" style="padding:var(--space-4) var(--space-5);">
+      <h3 class="table-title" style="font-size:15px;">Issued Invoices</h3>
+      {% if order.status == "CONFIRMED" %}
+      <a href="/orders/{{ order.id }}/bill/" class="btn-secondary" style="font-size:13px;">+ New Invoice</a>
+      {% endif %}
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Invoice No.</th>
+            <th>Bill Date</th>
+            <th>Payment Mode</th>
+            <th>Discount</th>
+            <th>Staff</th>
+            <th>Issued By</th>
+            <th>Issued At</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in order.invoices.all %}
+          <tr>
+            <td><strong>#{{ inv.invoice_no }}</strong></td>
+            <td>{{ inv.bill_date|date:"d M Y" }}</td>
+            <td>{{ inv.payment_mode }}</td>
+            <td>{% if inv.discount %}NPR {{ inv.discount }}{% else %}—{% endif %}</td>
+            <td>{{ inv.staff_name }}</td>
+            <td class="text-muted">{{ inv.issued_by.username|default:"—" }}</td>
+            <td class="text-muted">{{ inv.issued_at|date:"d M Y, H:i" }}</td>
+            <td>
+              <a href="/orders/invoices/{{ inv.id }}/pdf/" target="_blank" class="btn-table-edit">View PDF</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Status history -->
+  {% if order.status_logs.exists %}
+  <div class="table-card">
+    <div class="table-toolbar" style="padding:var(--space-4) var(--space-5);">
+      <h3 class="table-title" style="font-size:15px;">Status History</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr><th>From</th><th>To</th><th>Changed By</th><th>Note</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {% for log in order.status_logs.all %}
+          <tr>
+            <td><span class="badge badge-neutral">{{ log.old_status }}</span></td>
+            <td><span class="badge badge-primary">{{ log.new_status }}</span></td>
+            <td>{{ log.changed_by.username|default:"—" }}</td>
+            <td>{{ log.note|default:"—" }}</td>
+            <td class="text-muted">{{ log.changed_at|date:"d M Y, H:i" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

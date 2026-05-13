@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Price History — {{ supplier.name }} — Lophoro IMS{% endblock %}
+{% block breadcrumb %}Price History · {{ supplier.name }}{% endblock %}
+
+{% block content %}
+<div class="table-card" data-aos="fade-up">
+  <div class="table-toolbar">
+    <div>
+      <h2 class="table-title">{{ supplier.name }} — Price History</h2>
+      <p class="table-subtitle">Unit costs recorded each time a purchase was received from this supplier</p>
+    </div>
+    <a href="/procurement/suppliers/" class="btn-secondary">← Back to Suppliers</a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Product</th>
+          <th>Unit Cost (NPR)</th>
+          <th>Recorded By</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in history %}
+        <tr>
+          <td class="text-muted" style="white-space:nowrap;">{{ entry.recorded_at|date:"d M Y, H:i" }}</td>
+          <td><strong>{{ entry.product.name }}</strong></td>
+          <td>NPR {{ entry.unit_cost }}</td>
+          <td>{{ entry.recorded_by.username|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="empty-row">No price history yet. Receive a purchase from this supplier to start tracking.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
