@@ -1,3 +1,4 @@
+from decimal import Decimal, ROUND_HALF_UP
 from io import BytesIO
 from pathlib import Path
 
@@ -51,9 +52,9 @@ def _n2w(n: int) -> str:
 
 
 def amount_in_words(amount) -> str:
-    amount = round(float(amount), 2)
+    amount = Decimal(amount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     rupees = int(amount)
-    paisa = round((amount - rupees) * 100)
+    paisa = int((amount - rupees) * 100)
     words = 'Rupees ' + (_n2w(rupees) if rupees else 'Zero')
     if paisa:
         words += f' and {paisa:02d}/100 Paisa'
@@ -230,9 +231,9 @@ def generate_bill_pdf(order, invoice_no, bill_date, transaction_date, payment_mo
     items = list(order.items.select_related('product').all())
 
     for i, item in enumerate(items, 1):
-        rate = float(item.product.selling_price)
+        rate = item.product.selling_price
         qty = item.quantity
-        line_total = rate * qty
+        line_total = (rate * qty).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         r_rs, r_ps = int(rate), round((rate - int(rate)) * 100)
         t_rs, t_ps = int(line_total), round((line_total - int(line_total)) * 100)
         data.append([
@@ -272,8 +273,11 @@ def generate_bill_pdf(order, invoice_no, bill_date, transaction_date, payment_mo
 
     # ── 6. Totals ─────────────────────────────────────────────────────────────
     # Align Rs./Ps. columns with the items table Amount columns
-    subtotal = sum(float(it.product.selling_price) * it.quantity for it in items)
-    disc = float(discount) if discount else 0.0
+    subtotal = sum(
+        ((it.product.selling_price * it.quantity) for it in items),
+        Decimal('0'),
+    ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    disc = Decimal(discount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) if discount else Decimal('0.00')
     grand_total = subtotal - disc
 
     def _split(n):

@@ -21,6 +21,9 @@
   <form method="POST">
     {% csrf_token %}
     {{ formset.management_form }}
+    {% if formset.non_form_errors %}
+      <div class="form-non-field-errors">{{ formset.non_form_errors|join:" " }}</div>
+    {% endif %}
 
     <div class="form-grid" style="margin-bottom:var(--space-5);">
       <div class="form-group form-group-full">
@@ -42,8 +45,14 @@
       </div>
       {% for form in formset %}
       <div class="formset-row">
-        <div class="form-group">{{ form.product }}</div>
-        <div class="form-group">{{ form.quantity }}</div>
+        <div class="form-group">
+          {{ form.product }}
+          {% if form.product.errors %}<div class="field-error">{{ form.product.errors|join:" " }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          {{ form.quantity }}
+          {% if form.quantity.errors %}<div class="field-error">{{ form.quantity.errors|join:" " }}</div>{% endif %}
+        </div>
       </div>
       {% endfor %}
     </div>

@@ -145,8 +145,17 @@
       </div>
       {% endif %}
 
+      {% if existing_invoices %}
+      <div style="padding:var(--space-3) var(--space-4);background:#fffbeb;border:1px solid #f59e0b;border-radius:var(--radius-md);margin-bottom:var(--space-4);font-size:13px;color:#92400e;">
+        <strong>Warning:</strong> This order already has {{ existing_invoices|length }} invoice{{ existing_invoices|length|pluralize }} issued:
+        {% for inv in existing_invoices %}#{{ inv.invoice_no }} ({{ inv.bill_date|date:"d M Y" }}){% if not forloop.last %}, {% endif %}{% endfor %}.
+        Issuing another one will create a separate invoice for the same order.
+      </div>
+      {% endif %}
+
       <div class="form-actions">
-        <button type="submit" class="btn-primary">
+        <button type="submit" class="btn-primary"
+          {% if existing_invoices %}onclick="return confirm('This order already has {{ existing_invoices|length }} invoice{{ existing_invoices|length|pluralize }} issued. Issue another one anyway?')"{% endif %}>
           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
