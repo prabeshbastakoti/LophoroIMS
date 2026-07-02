@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 BACKUP_DIR = settings.BASE_DIR / "backups"
-PG_DUMP = r"C:\Program Files\PostgreSQL\18\bin\pg_dump.exe"
+PG_DUMP = os.getenv("PG_DUMP_PATH", "pg_dump")
 KEEP_LAST = 10
 
 

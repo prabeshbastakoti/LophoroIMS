@@ -133,12 +133,20 @@ Create a `.env` file in the root of the project with the following:
 
 ```env
 DJANGO_SECRET_KEY=your-secret-key-here
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=your-domain.com,www.your-domain.com
 DB_NAME=lophoroims
 DB_USER=postgres
 DB_PASSWORD=your-database-password
 DB_HOST=localhost
 DB_PORT=5432
+
+# Optional: only needed if `pg_dump` isn't on your system PATH
+# (e.g. Windows PostgreSQL installs). Used by `python manage.py backup_db`.
+PG_DUMP_PATH=C:\Program Files\PostgreSQL\18\bin\pg_dump.exe
 ```
+
+For local development, set `DJANGO_DEBUG=True` and `DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1` so Django's debug page and dev server work as expected. In production, `DJANGO_DEBUG` should always be `False` (that's the default if unset) and `DJANGO_ALLOWED_HOSTS` must list your real domain(s).
 
 ---
 
