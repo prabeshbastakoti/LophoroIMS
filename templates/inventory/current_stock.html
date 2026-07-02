@@ -60,9 +60,9 @@
           <td>{{ product.current_stock }}</td>
           <td>NPR {{ product.selling_price }}</td>
           <td>
-            {% if product.current_stock < 10 %}
+            {% if product.current_stock < product.reorder_point %}
               <span class="badge badge-danger">Low Stock</span>
-            {% elif product.current_stock < 25 %}
+            {% elif product.current_stock < product.reorder_point|add:15 %}
               <span class="badge badge-warning">Moderate</span>
             {% else %}
               <span class="badge badge-success">In Stock</span>

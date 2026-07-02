@@ -8,7 +8,7 @@ class StockMovement(models.Model):
         ("OUT", "Stock Out"),
     )
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
     movement_type = models.CharField(max_length=3, choices=MOVEMENT_TYPES)
     quantity = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
