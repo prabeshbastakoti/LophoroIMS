@@ -1,13 +1,16 @@
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from catalog.models import Product
+from lophoroims.validators import phone_validator
 
 
 class Supplier(models.Model):
     name = models.CharField(max_length=150)
-    phone = models.CharField(max_length=30, blank=True)
+    phone = models.CharField(max_length=30, blank=True, validators=[phone_validator])
     email = models.EmailField(blank=True)
     address = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -32,8 +35,11 @@ class Purchase(models.Model):
 class PurchaseItem(models.Model):
     purchase = models.ForeignKey(Purchase, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
-    quantity = models.PositiveIntegerField()
-    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1, message="Quantity must be at least 1.")])
+    unit_cost = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        validators=[MinValueValidator(0.01, message="Unit cost must be greater than 0.")],
+    )
 
     def __str__(self):
         return f"Purchase #{self.purchase.id} - {self.product.name} x {self.quantity}"

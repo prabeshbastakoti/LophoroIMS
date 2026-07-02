@@ -9,7 +9,10 @@
             <a href="/procurement/purchases/" class="secondary-btn">Back</a>
 
             {% if purchase.status == "DRAFT" %}
-                <a href="/procurement/purchases/{{ purchase.id }}/receive/" class="primary-btn">Receive Purchase</a>
+                <form method="POST" action="/procurement/purchases/{{ purchase.id }}/receive/" style="display:inline;" onsubmit="return confirm('Receive this purchase? This will add stock for every item listed and cannot be undone.')">
+                    {% csrf_token %}
+                    <button type="submit" class="primary-btn">Receive Purchase</button>
+                </form>
             {% endif %}
         </div>
     </div>
