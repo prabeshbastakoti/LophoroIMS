@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     login_view,
     logout_view,
+    register_view,
     user_list,
     user_create,
     user_edit,
@@ -13,6 +14,7 @@ from .views import (
 urlpatterns = [
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
+    path("register/", register_view, name="register"),
     path("users/", user_list, name="user_list"),
     path("users/add/", user_create, name="user_create"),
     path("users/<int:user_id>/edit/", user_edit, name="user_edit"),

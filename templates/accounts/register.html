@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In — Lophoro IMS</title>
+  <title>Create Admin Account — Lophoro IMS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,7 +20,6 @@
       background: #3D1A0A;
     }
 
-    /* ── Left brand panel ───────────────────────────────── */
     .login-left {
       flex: 0 0 55%;
       background: linear-gradient(150deg, #3D1A0A 0%, #1e0a03 100%);
@@ -48,58 +47,40 @@
     .login-logo-text span { color: #914D22; }
 
     .login-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 36px 0 16px; z-index: 1; }
-    .login-tagline { font-size: 40px; font-weight: 800; color: #fff; line-height: 1.15; letter-spacing: -1px; margin-bottom: 18px; }
+    .login-tagline { font-size: 36px; font-weight: 800; color: #fff; line-height: 1.15; letter-spacing: -1px; margin-bottom: 18px; }
     .login-tagline em { font-style: normal; color: #EDD9C0; }
     .login-desc { font-size: 14px; color: rgba(255,255,255,0.50); line-height: 1.85; max-width: 360px; }
 
-    .login-features { display: flex; flex-direction: column; gap: 11px; margin-top: 32px; }
-    .login-feature { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 500; }
-    .login-feature-dot { width: 6px; height: 6px; border-radius: 50%; background: #914D22; flex-shrink: 0; }
-
     .login-left-footer { font-size: 12px; color: rgba(255,255,255,0.28); z-index: 1; }
 
-    /* ── Right form panel ───────────────────────────────── */
     .login-right {
       flex: 1;
-      background: #FBF8F4;          /* cream-pale — solid, no variable */
+      background: #FBF8F4;
       display: flex; align-items: center; justify-content: center;
       padding: 48px 52px;
     }
 
-    .login-form-wrap { width: 100%; max-width: 370px; }
+    .login-form-wrap { width: 100%; max-width: 380px; }
 
     .login-form-title {
       font-size: 27px; font-weight: 800;
-      color: #1E0E05;               /* text-dark — solid */
+      color: #1E0E05;
       letter-spacing: -0.5px; margin-bottom: 6px;
     }
     .login-form-sub {
-      font-size: 13.5px; color: #9B7B65;   /* text-muted — solid */
-      margin-bottom: 28px; font-weight: 500;
+      font-size: 13.5px; color: #9B7B65;
+      margin-bottom: 24px; font-weight: 500;
     }
 
-    /* Role toggle pill */
-    .role-toggle {
-      display: flex; background: #F7EFE5;   /* cream-light — solid */
-      border-radius: 50px; padding: 4px;
-      margin-bottom: 26px; border: 1.5px solid #E2CDB8;
-    }
-    .role-toggle input { display: none; }
-    .role-toggle label {
-      flex: 1; text-align: center;
-      padding: 9px 16px; border-radius: 50px;
-      font-size: 13px; font-weight: 600;
-      color: #9B7B65; cursor: pointer;
-      font-family: 'Montserrat', sans-serif;
-      transition: all 0.22s ease;
-    }
-    .role-toggle input:checked + label {
-      background: #3D1A0A;
-      color: #EDD9C0;
-      box-shadow: 0 4px 14px rgba(61,26,10,0.35);
+    .setup-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #F7EFE5; color: #914D22;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+      text-transform: uppercase;
+      padding: 6px 12px; border-radius: 50px;
+      margin-bottom: 16px;
     }
 
-    /* Fields */
     .login-field { margin-bottom: 18px; }
     .login-field label {
       display: block; font-size: 11px; font-weight: 700;
@@ -114,17 +95,16 @@
       display: flex; align-items: center;
     }
 
-    /* ─ THE FIX: explicit white bg + dark text ─ */
     .login-input {
       width: 100%;
       padding: 13px 14px 13px 42px;
-      background: #FFFFFF;           /* white — fully opaque */
+      background: #FFFFFF;
       border: 1.5px solid #E2CDB8;
       border-radius: 12px;
       font-family: 'Montserrat', sans-serif;
       font-size: 14px;
       font-weight: 500;
-      color: #1E0E05;                /* near-black text */
+      color: #1E0E05;
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
     }
@@ -135,15 +115,18 @@
       box-shadow: 0 0 0 3px rgba(145,77,34,0.12);
     }
 
-    /* Error banner */
     .login-error {
       background: #fff5f5; border: 1px solid #fecaca;
       border-radius: 10px; padding: 11px 14px;
       color: #b91c1c; font-size: 13px; margin-bottom: 18px;
-      display: flex; align-items: center; gap: 8px; font-weight: 500;
+      display: flex; align-items: flex-start; gap: 8px; font-weight: 500;
     }
 
-    /* Submit button */
+    .field-error {
+      color: #b91c1c; font-size: 12px; font-weight: 500;
+      margin-top: 6px;
+    }
+
     .login-submit {
       width: 100%; padding: 14px;
       background: #3D1A0A;
@@ -152,7 +135,6 @@
       font-size: 14px; font-weight: 700; letter-spacing: 0.4px;
       cursor: pointer; margin-top: 10px;
       transition: background 0.2s, transform 0.12s, box-shadow 0.2s;
-      position: relative; overflow: hidden;
     }
     .login-submit:hover {
       background: #5C2E12;
@@ -165,38 +147,21 @@
       text-align: center; margin-top: 22px;
       font-size: 11.5px; color: #9B7B65; line-height: 1.6;
     }
+    .login-footer-note a { color: #914D22; font-weight: 600; text-decoration: none; }
 
-    /* ── Tablet (≤768px) ── */
     @media (max-width: 768px) {
       body { flex-direction: column; }
-      .login-left {
-        flex: none; padding: 32px 28px; min-height: 180px;
-      }
-      .login-tagline { font-size: 24px; margin-bottom: 12px; }
-      .login-desc    { font-size: 13px; }
-      .login-features, .login-left-footer { display: none; }
-      .login-right   { padding: 32px 24px; flex: 1; }
+      .login-left { flex: none; padding: 32px 28px; min-height: 160px; }
+      .login-tagline { font-size: 22px; margin-bottom: 12px; }
+      .login-desc { font-size: 13px; }
+      .login-left-footer { display: none; }
+      .login-right { padding: 32px 24px; flex: 1; }
       .login-form-wrap { max-width: 100%; }
-    }
-
-    /* ── Small phone (≤480px) ── */
-    @media (max-width: 480px) {
-      .login-left  { padding: 24px 20px; min-height: 140px; }
-      .login-tagline { font-size: 20px; }
-      .login-logo-text { font-size: 18px; }
-      .login-right { padding: 24px 20px; }
-      .login-form-title { font-size: 22px; }
-
-      /* Bigger touch targets */
-      .login-input  { padding: 15px 14px 15px 44px; font-size: 16px; }
-      .login-submit { padding: 16px; font-size: 15px; }
-      .role-toggle label { padding: 11px 12px; font-size: 12px; }
     }
   </style>
 </head>
 <body>
 
-<!-- Left brand panel -->
 <div class="login-left">
   <div class="login-logo-wrap">
     <img src="{% static 'images/logo.png' %}" alt="Lophoro Decor" class="login-logo-img"
@@ -206,18 +171,13 @@
 
   <div class="login-hero">
     <h1 class="login-tagline">
-      Elegant <em>Inventory</em><br>Management
+      First-time <em>setup</em><br>for your enterprise
     </h1>
     <p class="login-desc">
-      A premium inventory and order management system crafted for Lophoro Decor —
-      Bharatpur's finest interior decor destination.
+      Create the first administrator account for your Lophoro IMS deployment.
+      This account can then add and manage every other user from within the app —
+      no developer needed for future user setup.
     </p>
-    <div class="login-features">
-      <div class="login-feature"><span class="login-feature-dot"></span>Real-time inventory tracking</div>
-      <div class="login-feature"><span class="login-feature-dot"></span>EOQ & ABC analytics algorithms</div>
-      <div class="login-feature"><span class="login-feature-dot"></span>Sales trend intelligence</div>
-      <div class="login-feature"><span class="login-feature-dot"></span>Role-based access control</div>
-    </div>
   </div>
 
   <div class="login-left-footer">
@@ -225,11 +185,13 @@
   </div>
 </div>
 
-<!-- Right form panel -->
 <div class="login-right">
   <div class="login-form-wrap">
-    <h2 class="login-form-title">Welcome back</h2>
-    <p class="login-form-sub">Sign in to your Lophoro IMS account</p>
+    <span class="setup-badge">
+      <i data-lucide="sparkles" width="13" height="13"></i> One-time setup
+    </span>
+    <h2 class="login-form-title">Create admin account</h2>
+    <p class="login-form-sub">This is only available before any user exists on this system.</p>
 
     {% if messages %}
       {% for message in messages %}
@@ -240,49 +202,48 @@
       {% endfor %}
     {% endif %}
 
-    {% if no_users_exist %}
-      <div class="login-error" style="background:#f0fdf4; border-color:#bbf7d0; color:#15803d;">
-        <i data-lucide="info" width="16" height="16"></i>
-        No admin account exists yet. <a href="/accounts/register/" style="color:#15803d; font-weight:700;">Create the first admin account</a> to get started.
+    {% if form.non_field_errors %}
+      <div class="login-error">
+        <i data-lucide="alert-circle" width="16" height="16"></i>
+        {{ form.non_field_errors|join:" " }}
       </div>
     {% endif %}
 
     <form method="POST">
       {% csrf_token %}
 
-      <!-- Role selector -->
-      <div class="role-toggle">
-        <input type="radio" id="role-admin" name="role" value="ADMIN" required checked>
-        <label for="role-admin">Administrator</label>
-        <input type="radio" id="role-staff" name="role" value="STAFF">
-        <label for="role-staff">Staff</label>
-      </div>
-
-      <!-- Username -->
       <div class="login-field">
-        <label for="username">Username</label>
+        <label for="{{ form.username.id_for_label }}">Username</label>
         <div class="login-input-wrap">
           <span class="field-icon"><i data-lucide="user" width="16" height="16"></i></span>
-          <input type="text" id="username" name="username" class="login-input"
-                 placeholder="Enter your username" autocomplete="username" required>
+          {{ form.username }}
         </div>
+        {% if form.username.errors %}<div class="field-error">{{ form.username.errors|join:" " }}</div>{% endif %}
       </div>
 
-      <!-- Password -->
       <div class="login-field">
-        <label for="password">Password</label>
+        <label for="{{ form.password.id_for_label }}">Password</label>
         <div class="login-input-wrap">
           <span class="field-icon"><i data-lucide="lock" width="16" height="16"></i></span>
-          <input type="password" id="password" name="password" class="login-input"
-                 placeholder="Enter your password" autocomplete="current-password" required>
+          {{ form.password }}
         </div>
+        {% if form.password.errors %}<div class="field-error">{{ form.password.errors|join:" " }}</div>{% endif %}
       </div>
 
-      <button type="submit" class="login-submit">Sign In</button>
+      <div class="login-field">
+        <label for="{{ form.confirm_password.id_for_label }}">Confirm Password</label>
+        <div class="login-input-wrap">
+          <span class="field-icon"><i data-lucide="lock" width="16" height="16"></i></span>
+          {{ form.confirm_password }}
+        </div>
+        {% if form.confirm_password.errors %}<div class="field-error">{{ form.confirm_password.errors|join:" " }}</div>{% endif %}
+      </div>
+
+      <button type="submit" class="login-submit">Create Admin Account</button>
     </form>
 
     <p class="login-footer-note">
-      Lophoro IMS &mdash; BSc CSIT 7th Semester Project, Tribhuvan University
+      Already have an account? <a href="/accounts/login/">Sign in instead</a>
     </p>
   </div>
 </div>
@@ -290,6 +251,12 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     if (typeof lucide !== 'undefined') lucide.createIcons();
+    document.querySelectorAll('.login-field input').forEach(function (el) {
+      el.classList.add('login-input');
+      if (el.name === 'username') { el.setAttribute('placeholder', 'Choose a username'); el.setAttribute('autocomplete', 'username'); }
+      if (el.name === 'password') { el.setAttribute('placeholder', 'Choose a strong password'); el.setAttribute('autocomplete', 'new-password'); }
+      if (el.name === 'confirm_password') { el.setAttribute('placeholder', 'Re-enter password'); el.setAttribute('autocomplete', 'new-password'); }
+    });
   });
 </script>
 </body>

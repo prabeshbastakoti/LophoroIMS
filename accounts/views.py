@@ -1,24 +1,15 @@
-from functools import wraps
-
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.db.models import ProtectedError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.views.decorators.http import require_POST
 
+from .audit import log_action
+from .decorators import admin_required
 from .models import User, AuditLog
-from .forms import UserCreateForm, UserUpdateForm, PasswordResetForm
-
-
-def admin_required(view_func):
-    @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect("/accounts/login/")
-        if request.user.role != "ADMIN":
-            return HttpResponseForbidden("Access denied. Only admin can access this page.")
-        return view_func(request, *args, **kwargs)
-    return wrapper
+from .forms import UserCreateForm, UserUpdateForm, PasswordResetForm, AdminRegisterForm
+from .utils import is_last_active_admin
 
 
 def login_view(request):
@@ -35,19 +26,44 @@ def login_view(request):
         if user is not None:
             if user.role != role:
                 messages.error(request, "You selected the wrong login role.")
-                return render(request, "accounts/login.html")
+                return render(request, "accounts/login.html", {
+                    "no_users_exist": not User.objects.exists()
+                })
 
             login(request, user)
             return redirect("/analytics/")
         else:
             messages.error(request, "Invalid username or password.")
 
-    return render(request, "accounts/login.html")
+    return render(request, "accounts/login.html", {
+        "no_users_exist": not User.objects.exists()
+    })
 
 
 def logout_view(request):
     logout(request)
     return redirect("/accounts/login/")
+
+
+def register_view(request):
+    """Lets a brand-new deployment create its first Admin account without
+    developer intervention. Locks itself once any user exists so ongoing
+    user management stays through the Admin-only Manage Users panel."""
+    if User.objects.exists():
+        messages.error(request, "Setup already complete. Please sign in, or ask an admin to add your account.")
+        return redirect("/accounts/login/")
+
+    if request.method == "POST":
+        form = AdminRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Admin account created. Welcome to Lophoro IMS.")
+            return redirect("/analytics/")
+    else:
+        form = AdminRegisterForm()
+
+    return render(request, "accounts/register.html", {"form": form})
 
 
 @login_required
@@ -65,7 +81,8 @@ def user_create(request):
     if request.method == "POST":
         form = UserCreateForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            log_action(request.user, "CREATE", user)
             return redirect("/accounts/users/")
     else:
         form = UserCreateForm()
@@ -81,12 +98,23 @@ def user_create(request):
 @admin_required
 def user_edit(request, user_id):
     user_obj = get_object_or_404(User, id=user_id)
+    # Capture pre-edit state before the ModelForm mutates user_obj in place during validation.
+    was_last_active_admin = is_last_active_admin(user_obj)
 
     if request.method == "POST":
         form = UserUpdateForm(request.POST, instance=user_obj)
         if form.is_valid():
-            form.save()
-            return redirect("/accounts/users/")
+            demoting = form.cleaned_data["role"] != "ADMIN"
+            deactivating = not form.cleaned_data["is_active"]
+            if was_last_active_admin and (demoting or deactivating):
+                messages.error(
+                    request,
+                    "You can't remove the last remaining Administrator. Promote another user to Admin first."
+                )
+            else:
+                form.save()
+                log_action(request.user, "UPDATE", user_obj)
+                return redirect("/accounts/users/")
     else:
         form = UserUpdateForm(instance=user_obj)
 
@@ -100,15 +128,30 @@ def user_edit(request, user_id):
 
 @login_required
 @admin_required
+@require_POST
 def user_delete(request, user_id):
     user_obj = get_object_or_404(User, id=user_id)
-    if request.method == "POST":
-        if user_obj == request.user:
-            messages.error(request, "You cannot delete your own account.")
-            return redirect("/accounts/users/")
-        user_obj.delete()
-        messages.success(request, f"User '{user_obj.username}' has been deleted.")
-        return redirect("/accounts/users/")
+    if user_obj == request.user:
+        messages.error(request, "You cannot delete your own account.")
+    elif is_last_active_admin(user_obj):
+        messages.error(
+            request,
+            "You can't remove the last remaining Administrator. Promote another user to Admin first."
+        )
+    else:
+        deleted_pk = user_obj.pk
+        try:
+            user_obj.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                f"Cannot delete '{user_obj.username}' — they have created orders or purchases on record. "
+                "Deactivate their account instead."
+            )
+        else:
+            user_obj.pk = deleted_pk
+            log_action(request.user, "DELETE", user_obj)
+            messages.success(request, f"User '{user_obj.username}' has been deleted.")
     return redirect("/accounts/users/")
 
 
@@ -123,6 +166,7 @@ def user_reset_password(request, user_id):
             new_password = form.cleaned_data["new_password"]
             user_obj.set_password(new_password)
             user_obj.save()
+            log_action(request.user, "UPDATE", user_obj, "Password reset")
             return redirect("/accounts/users/")
     else:
         form = PasswordResetForm()
