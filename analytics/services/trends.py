@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from decimal import Decimal
-from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 
 from orders.models import OrderItem
@@ -11,17 +10,6 @@ def build_sales_trend():
     Returns list of rows:
     month_label, revenue, growth_pct
     """
-    qs = (
-        OrderItem.objects
-        .filter(order__status="CONFIRMED")
-        .annotate(month=TruncMonth("order__created_at"))
-        .values("month")
-        .annotate(total_qty=Sum("quantity"))
-        .order_by("month")
-    )
-
-    # We need revenue, not just qty, so compute using selling_price per item
-    # We'll do it by fetching items grouped by month and summing qty*price
     items = (
         OrderItem.objects
         .filter(order__status="CONFIRMED")

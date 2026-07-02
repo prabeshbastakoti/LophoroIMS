@@ -3,7 +3,7 @@ import io
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
+from django.db.models import F, Sum
 from django.utils import timezone
 
 import openpyxl
@@ -32,7 +32,7 @@ def dashboard(request):
     from datetime import timedelta
     from decimal import Decimal
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     this_month_start = today.replace(day=1)
     last_month_end = this_month_start - timedelta(days=1)
     last_month_start = last_month_end.replace(day=1)
@@ -42,7 +42,7 @@ def dashboard(request):
     total_orders    = Order.objects.filter(status="CONFIRMED").count()
     total_purchases = Purchase.objects.filter(status="RECEIVED").count()
     total_stock     = Product.objects.aggregate(total=Sum("current_stock"))["total"] or 0
-    low_stock_products = Product.objects.filter(current_stock__lt=10)
+    low_stock_products = Product.objects.filter(current_stock__lt=F("reorder_point"))
     draft_orders_count = Order.objects.filter(status="DRAFT").count()
 
     # ── Today ─────────────────────────────────────────────────────────────────
@@ -215,9 +215,9 @@ def export_inventory_excel(request):
     ws.append(headers)
     _style_header_row(ws, 1, len(headers))
     for i, p in enumerate(products, 1):
-        if p.current_stock < 10:
+        if p.current_stock < p.reorder_point:
             status = "Low Stock"
-        elif p.current_stock < 25:
+        elif p.current_stock < p.reorder_point + 15:
             status = "Medium"
         else:
             status = "OK"
@@ -245,7 +245,7 @@ def export_inventory_pdf(request):
     ]
     data = [["#", "Product", "Category", "Selling Price", "Unit Cost", "Stock", "Status"]]
     for i, p in enumerate(products, 1):
-        status = "Low" if p.current_stock < 10 else ("Medium" if p.current_stock < 25 else "OK")
+        status = "Low" if p.current_stock < p.reorder_point else ("Medium" if p.current_stock < p.reorder_point + 15 else "OK")
         data.append([i, p.name, p.category.name, f"NPR {p.selling_price}", f"NPR {p.unit_cost}", p.current_stock, status])
     t = Table(data, repeatRows=1)
     t.setStyle(_pdf_table_style())
