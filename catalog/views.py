@@ -1,16 +1,21 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from django.db.models import Q
+from django.db.models import ProtectedError, Q
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 
+from accounts.audit import log_action
 from .models import Category, Product
 from .forms import CategoryForm, ProductForm
 
 
 @login_required
 def category_list(request):
-    categories = Category.objects.all().order_by("name")
+    show_inactive = request.GET.get("show") == "inactive"
+    categories = Category.objects.filter(is_active=not show_inactive).order_by("name")
     return render(request, "catalog/category_list.html", {
-        "categories": categories
+        "categories": categories,
+        "show_inactive": show_inactive,
     })
 
 
@@ -19,7 +24,8 @@ def category_create(request):
     if request.method == "POST":
         form = CategoryForm(request.POST)
         if form.is_valid():
-            form.save()
+            category = form.save()
+            log_action(request.user, "CREATE", category)
             return redirect("/catalog/categories/")
     else:
         form = CategoryForm()
@@ -32,9 +38,11 @@ def category_create(request):
 
 @login_required
 def product_list(request):
-    products = Product.objects.select_related("category").all().order_by("name")
+    show_inactive = request.GET.get("show") == "inactive"
+    products = Product.objects.select_related("category").filter(is_active=not show_inactive).order_by("name")
     return render(request, "catalog/product_list.html", {
-        "products": products
+        "products": products,
+        "show_inactive": show_inactive,
     })
 
 
@@ -43,7 +51,8 @@ def product_create(request):
     if request.method == "POST":
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            product = form.save()
+            log_action(request.user, "CREATE", product)
             return redirect("/catalog/products/")
     else:
         form = ProductForm()
@@ -56,11 +65,12 @@ def product_create(request):
 
 @login_required
 def category_edit(request, category_id):
-    category = Category.objects.get(id=category_id)
+    category = get_object_or_404(Category, id=category_id)
     if request.method == "POST":
         form = CategoryForm(request.POST, instance=category)
         if form.is_valid():
             form.save()
+            log_action(request.user, "UPDATE", category)
             return redirect("/catalog/categories/")
     else:
         form = CategoryForm(instance=category)
@@ -72,12 +82,50 @@ def category_edit(request, category_id):
 
 
 @login_required
+@require_POST
+def category_toggle_active(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    category.is_active = not category.is_active
+    category.save(update_fields=["is_active"])
+    log_action(request.user, "UPDATE", category, "Reactivated" if category.is_active else "Deactivated")
+    messages.success(
+        request,
+        f"Category '{category.name}' has been {'reactivated' if category.is_active else 'deactivated'}."
+    )
+    return redirect("/catalog/categories/")
+
+
+@login_required
+@require_POST
+def category_delete(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    if category.product_set.exists():
+        messages.error(
+            request,
+            f"Cannot delete '{category.name}' — it still has {category.product_set.count()} product(s) in it. "
+            "Move or delete those products first."
+        )
+    else:
+        deleted_pk = category.pk
+        try:
+            category.delete()
+        except ProtectedError:
+            messages.error(request, f"Cannot delete '{category.name}' — it is still in use.")
+        else:
+            category.pk = deleted_pk
+            log_action(request.user, "DELETE", category)
+            messages.success(request, f"Category '{category.name}' has been deleted.")
+    return redirect("/catalog/categories/")
+
+
+@login_required
 def product_edit(request, product_id):
-    product = Product.objects.get(id=product_id)
+    product = get_object_or_404(Product, id=product_id)
     if request.method == "POST":
         form = ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
             form.save()
+            log_action(request.user, "UPDATE", product)
             return redirect("/catalog/products/")
     else:
         form = ProductForm(instance=product)
@@ -87,6 +135,40 @@ def product_edit(request, product_id):
         "page_title": "Edit Product",
         "product": product,
     })
+
+
+@login_required
+@require_POST
+def product_toggle_active(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    product.is_active = not product.is_active
+    product.save(update_fields=["is_active"])
+    log_action(request.user, "UPDATE", product, "Reactivated" if product.is_active else "Deactivated")
+    messages.success(
+        request,
+        f"Product '{product.name}' has been {'reactivated' if product.is_active else 'deactivated'}."
+    )
+    return redirect("/catalog/products/")
+
+
+@login_required
+@require_POST
+def product_delete(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    deleted_pk = product.pk
+    try:
+        product.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            f"Cannot delete '{product.name}' — it is referenced by existing orders, returns, purchases, "
+            "or stock movement history. Deactivate it instead."
+        )
+    else:
+        product.pk = deleted_pk
+        log_action(request.user, "DELETE", product)
+        messages.success(request, f"Product '{product.name}' has been deleted.")
+    return redirect("/catalog/products/")
 
 
 @login_required

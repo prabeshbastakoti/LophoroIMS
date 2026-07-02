@@ -20,9 +20,13 @@
 
   <form method="POST">
     {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="form-non-field-errors">{{ form.non_field_errors|join:" " }}</div>
+    {% endif %}
     <div class="form-group">
       <label class="form-label">Category Name</label>
       {{ form.name }}
+      {% if form.name.errors %}<div class="field-error">{{ form.name.errors|join:" " }}</div>{% endif %}
     </div>
     <div class="form-actions">
       <button type="submit" class="btn-primary">Save Category</button>

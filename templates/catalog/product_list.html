@@ -7,7 +7,15 @@
   <div class="table-toolbar">
     <div>
       <h2 class="table-title">Product Management</h2>
-      <p class="table-subtitle">All catalog products with pricing and stock levels</p>
+      <p class="table-subtitle">
+        {% if show_inactive %}Discontinued products{% else %}All catalog products with pricing and stock levels{% endif %}
+        &nbsp;·&nbsp;
+        {% if show_inactive %}
+          <a href="/catalog/products/">View active products</a>
+        {% else %}
+          <a href="/catalog/products/?show=inactive">View discontinued products</a>
+        {% endif %}
+      </p>
     </div>
     <a href="/catalog/products/add/" class="btn-primary">
       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -48,21 +56,35 @@
           <td>NPR {{ product.selling_price }}</td>
           <td>NPR {{ product.unit_cost }}</td>
           <td>
-            {% if product.current_stock < 10 %}
+            {% if product.current_stock < product.reorder_point %}
               <span class="badge badge-danger">{{ product.current_stock }}</span>
-            {% elif product.current_stock < 25 %}
+            {% elif product.current_stock < product.reorder_point|add:15 %}
               <span class="badge badge-warning">{{ product.current_stock }}</span>
             {% else %}
               <span class="badge badge-success">{{ product.current_stock }}</span>
             {% endif %}
           </td>
-          <td>
+          <td class="actions-cell">
             <a href="/catalog/products/{{ product.id }}/edit/" class="btn-table-edit">Edit</a>
+            <form method="POST" action="/catalog/products/{{ product.id }}/toggle-active/" style="display:inline;">
+              {% csrf_token %}
+              {% if show_inactive %}
+                <button type="submit" class="btn-table-view" onclick="return confirm('Reactivate product \'{{ product.name }}\'?')">Reactivate</button>
+              {% else %}
+                <button type="submit" class="btn-table-view" onclick="return confirm('Deactivate product \'{{ product.name }}\'? It will be hidden from pickers but not deleted.')">Deactivate</button>
+              {% endif %}
+            </form>
+            <form method="POST" action="/catalog/products/{{ product.id }}/delete/" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn-table-delete" onclick="return confirm('Delete product \'{{ product.name }}\'? This cannot be undone.')">Delete</button>
+            </form>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="8" class="empty-row">No products found. Add your first product to get started.</td>
+          <td colspan="8" class="empty-row">
+            {% if show_inactive %}No discontinued products.{% else %}No products found. Add your first product to get started.{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

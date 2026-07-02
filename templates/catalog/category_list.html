@@ -7,7 +7,15 @@
   <div class="table-toolbar">
     <div>
       <h2 class="table-title">Category Management</h2>
-      <p class="table-subtitle">Organise your product catalog by category</p>
+      <p class="table-subtitle">
+        {% if show_inactive %}Discontinued categories{% else %}Organise your product catalog by category{% endif %}
+        &nbsp;·&nbsp;
+        {% if show_inactive %}
+          <a href="/catalog/categories/">View active categories</a>
+        {% else %}
+          <a href="/catalog/categories/?show=inactive">View discontinued categories</a>
+        {% endif %}
+      </p>
     </div>
     <a href="/catalog/categories/add/" class="btn-primary">
       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -32,13 +40,27 @@
         <tr>
           <td class="text-muted">{{ category.id }}</td>
           <td><strong>{{ category.name }}</strong></td>
-          <td>
+          <td class="actions-cell">
             <a href="/catalog/categories/{{ category.id }}/edit/" class="btn-table-edit">Edit</a>
+            <form method="POST" action="/catalog/categories/{{ category.id }}/toggle-active/" style="display:inline;">
+              {% csrf_token %}
+              {% if show_inactive %}
+                <button type="submit" class="btn-table-view" onclick="return confirm('Reactivate category \'{{ category.name }}\'?')">Reactivate</button>
+              {% else %}
+                <button type="submit" class="btn-table-view" onclick="return confirm('Deactivate category \'{{ category.name }}\'? It will be hidden from pickers but not deleted.')">Deactivate</button>
+              {% endif %}
+            </form>
+            <form method="POST" action="/catalog/categories/{{ category.id }}/delete/" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn-table-delete" onclick="return confirm('Delete category \'{{ category.name }}\'? This only works if it has no products left in it.')">Delete</button>
+            </form>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="3" class="empty-row">No categories found. Add your first category.</td>
+          <td colspan="3" class="empty-row">
+            {% if show_inactive %}No discontinued categories.{% else %}No categories found. Add your first category.{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

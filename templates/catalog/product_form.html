@@ -20,38 +20,58 @@
 
   <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="form-non-field-errors">{{ form.non_field_errors|join:" " }}</div>
+    {% endif %}
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label">Product Name</label>
         {{ form.name }}
+        {% if form.name.errors %}<div class="field-error">{{ form.name.errors|join:" " }}</div>{% endif %}
       </div>
       <div class="form-group">
         <label class="form-label">Category</label>
         {{ form.category }}
+        {% if form.category.errors %}<div class="field-error">{{ form.category.errors|join:" " }}</div>{% endif %}
       </div>
       <div class="form-group">
         <label class="form-label">Selling Price (NPR)</label>
         {{ form.selling_price }}
+        {% if form.selling_price.errors %}<div class="field-error">{{ form.selling_price.errors|join:" " }}</div>{% endif %}
       </div>
       <div class="form-group">
         <label class="form-label">Unit Cost (NPR)</label>
         {{ form.unit_cost }}
+        {% if form.unit_cost.errors %}<div class="field-error">{{ form.unit_cost.errors|join:" " }}</div>{% endif %}
       </div>
       <div class="form-group">
         <label class="form-label">Annual Demand</label>
         {{ form.annual_demand }}
+        <small class="form-hint">{{ form.annual_demand.help_text }}</small>
+        {% if form.annual_demand.errors %}<div class="field-error">{{ form.annual_demand.errors|join:" " }}</div>{% endif %}
       </div>
       <div class="form-group">
         <label class="form-label">Ordering Cost (NPR)</label>
         {{ form.ordering_cost }}
+        <small class="form-hint">{{ form.ordering_cost.help_text }}</small>
+        {% if form.ordering_cost.errors %}<div class="field-error">{{ form.ordering_cost.errors|join:" " }}</div>{% endif %}
       </div>
       <div class="form-group">
         <label class="form-label">Holding Cost (NPR/unit/yr)</label>
         {{ form.holding_cost }}
+        <small class="form-hint">{{ form.holding_cost.help_text }}</small>
+        {% if form.holding_cost.errors %}<div class="field-error">{{ form.holding_cost.errors|join:" " }}</div>{% endif %}
       </div>
       <div class="form-group">
         <label class="form-label">Current Stock</label>
         {{ form.current_stock }}
+        {% if form.current_stock.errors %}<div class="field-error">{{ form.current_stock.errors|join:" " }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reorder Point</label>
+        {{ form.reorder_point }}
+        <small class="form-hint">{{ form.reorder_point.help_text }}</small>
+        {% if form.reorder_point.errors %}<div class="field-error">{{ form.reorder_point.errors|join:" " }}</div>{% endif %}
       </div>
       <div class="form-group form-group-full">
         <label class="form-label">Product Image</label>
@@ -71,6 +91,7 @@
             {% endif %}
           </div>
         </div>
+        {% if form.image.errors %}<div class="field-error">{{ form.image.errors|join:" " }}</div>{% endif %}
       </div>
     </div>
 
