@@ -1,5 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
+from django.conf import settings
 from django.db.models import ProtectedError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -21,6 +23,18 @@ def login_view(request):
         password = request.POST.get("password")
         role = request.POST.get("role")
 
+        cache_key = f"login_attempts:{username}"
+        attempts = cache.get(cache_key, 0)
+
+        if attempts >= settings.LOGIN_ATTEMPT_LIMIT:
+            messages.error(
+                request,
+                "Too many failed login attempts. Please try again in 15 minutes."
+            )
+            return render(request, "accounts/login.html", {
+                "no_users_exist": not User.objects.exists()
+            })
+
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
@@ -30,9 +44,11 @@ def login_view(request):
                     "no_users_exist": not User.objects.exists()
                 })
 
+            cache.delete(cache_key)
             login(request, user)
             return redirect("/analytics/")
         else:
+            cache.set(cache_key, attempts + 1, timeout=settings.LOGIN_LOCKOUT_SECONDS)
             messages.error(request, "Invalid username or password.")
 
     return render(request, "accounts/login.html", {
