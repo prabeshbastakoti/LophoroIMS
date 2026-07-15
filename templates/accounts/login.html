@@ -113,11 +113,19 @@
       color: #9B7B65; pointer-events: none;
       display: flex; align-items: center;
     }
+    .field-icon-toggle {
+      left: auto; right: 13px;
+      pointer-events: auto; cursor: pointer;
+    }
+    .field-icon-toggle .icon-eye,
+    .field-icon-toggle .icon-off {
+      align-items: center;
+    }
 
     /* ─ THE FIX: explicit white bg + dark text ─ */
     .login-input {
       width: 100%;
-      padding: 13px 14px 13px 42px;
+      padding: 13px 42px 13px 42px;
       background: #FFFFFF;           /* white — fully opaque */
       border: 1.5px solid #E2CDB8;
       border-radius: 12px;
@@ -188,7 +196,7 @@
       .login-form-title { font-size: 22px; }
 
       /* Bigger touch targets */
-      .login-input  { padding: 15px 14px 15px 44px; font-size: 16px; }
+      .login-input  { padding: 15px 44px 15px 44px; font-size: 16px; }
       .login-submit { padding: 16px; font-size: 15px; }
       .role-toggle label { padding: 11px 12px; font-size: 12px; }
     }
@@ -275,6 +283,11 @@
           <span class="field-icon"><i data-lucide="lock" width="16" height="16"></i></span>
           <input type="password" id="password" name="password" class="login-input"
                  placeholder="Enter your password" autocomplete="current-password" required>
+          <span class="field-icon field-icon-toggle" id="togglePassword" role="button" tabindex="0"
+                aria-label="Show password">
+            <span class="icon-eye" id="iconEye" style="display:flex;"><i data-lucide="eye" width="16" height="16"></i></span>
+            <span class="icon-off" id="iconOff" style="display:none;"><i data-lucide="eye-off" width="16" height="16"></i></span>
+          </span>
         </div>
       </div>
 
@@ -290,6 +303,27 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    var toggle = document.getElementById('togglePassword');
+    var passwordInput = document.getElementById('password');
+    var iconEye = document.getElementById('iconEye');
+    var iconOff = document.getElementById('iconOff');
+    if (toggle && passwordInput && iconEye && iconOff) {
+      var togglePassword = function () {
+        var isVisible = passwordInput.type === 'text';
+        passwordInput.type = isVisible ? 'password' : 'text';
+        iconEye.style.display = isVisible ? 'flex' : 'none';
+        iconOff.style.display = isVisible ? 'none' : 'flex';
+        toggle.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
+      };
+      toggle.addEventListener('click', togglePassword);
+      toggle.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          togglePassword();
+        }
+      });
+    }
   });
 </script>
 </body>
