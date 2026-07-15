@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load money_filters %}
 {% block title %}Generate Invoice — Order #{{ order.id }} — Lophoro IMS{% endblock %}
 {% block breadcrumb %}Invoice — Order #{{ order.id }}{% endblock %}
 
@@ -34,7 +35,7 @@
             <td><strong>#{{ inv.invoice_no }}</strong></td>
             <td>{{ inv.bill_date|date:"d M Y" }}</td>
             <td>{{ inv.payment_mode }}</td>
-            <td>{% if inv.discount %}NPR {{ inv.discount }}{% else %}—{% endif %}</td>
+            <td>{% if inv.discount %}NPR {{ inv.discount|money }}{% if inv.discount_type == "PERCENT" %} ({{ inv.discount_value|money }}%){% endif %}{% else %}—{% endif %}</td>
             <td>{{ inv.staff_name }}</td>
             <td class="text-muted">{{ inv.issued_by.username|default:"—" }}</td>
             <td class="text-muted">{{ inv.issued_at|date:"d M Y, H:i" }}</td>
@@ -83,7 +84,7 @@
             <td class="text-muted">{{ forloop.counter }}</td>
             <td><strong>{{ item.product.name }}</strong></td>
             <td>{{ item.quantity }}</td>
-            <td style="text-align:right;">NPR {{ item.product.selling_price }}</td>
+            <td style="text-align:right;">NPR {{ item.product.selling_price|money }}</td>
             <td style="text-align:right;">NPR {% widthratio item.quantity 1 item.product.selling_price %}</td>
           </tr>
           {% endfor %}
@@ -115,6 +116,7 @@
         <div class="form-group">
           <label class="form-label">Invoice No. <span style="color:var(--color-danger)">*</span></label>
           {{ form.invoice_no }}
+          {% if last_invoice %}<p class="form-hint">Last issued: #{{ last_invoice.invoice_no }}</p>{% endif %}
         </div>
         <div class="form-group">
           <label class="form-label">Payment Mode</label>
@@ -129,8 +131,13 @@
           {{ form.bill_date }}
         </div>
         <div class="form-group">
-          <label class="form-label">Discount (NPR)</label>
-          {{ form.discount }}
+          <label class="form-label">Discount Type</label>
+          {{ form.discount_type }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Discount Value</label>
+          {{ form.discount_value }}
+          <p class="form-hint">Enter an NPR amount, or a % (0–100), depending on the type selected.</p>
         </div>
         <div class="form-group">
           <label class="form-label">Staff Name <span style="color:var(--color-danger)">*</span></label>

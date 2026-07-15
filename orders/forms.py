@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django import forms
 from django.forms import inlineformset_factory
@@ -76,6 +76,8 @@ class BillDetailsForm(forms.Form):
         ("Cash", "Cash"),
         ("Cheque", "Cheque"),
         ("Credit", "Credit"),
+        ("COD", "Cash on Delivery"),
+        ("QR", "QR Payment"),
         ("Other", "Other"),
     ]
     invoice_no = forms.CharField(
@@ -91,7 +93,8 @@ class BillDetailsForm(forms.Form):
         initial=timezone.now,
     )
     payment_mode = forms.ChoiceField(choices=PAYMENT_CHOICES)
-    discount = forms.DecimalField(
+    discount_type = forms.ChoiceField(choices=Invoice.DISCOUNT_TYPE_CHOICES, initial="AMOUNT")
+    discount_value = forms.DecimalField(
         max_digits=10,
         decimal_places=2,
         initial=0,
@@ -122,15 +125,27 @@ class BillDetailsForm(forms.Form):
         if transaction_date and bill_date and bill_date < transaction_date:
             self.add_error("bill_date", "Bill date cannot be before the transaction date.")
 
-        discount = cleaned_data.get("discount")
-        if discount is not None and self.order is not None:
+        discount_type = cleaned_data.get("discount_type")
+        discount_value = cleaned_data.get("discount_value")
+        if discount_value is not None and self.order is not None:
             subtotal = sum(
                 (item.quantity * item.product.selling_price for item in self.order.items.all()),
                 Decimal("0"),
             )
-            if discount > subtotal:
+            if discount_type == "PERCENT":
+                if discount_value > 100:
+                    self.add_error("discount_value", "Percentage discount cannot exceed 100%.")
+                    return cleaned_data
+                resolved_discount = (subtotal * discount_value / Decimal("100")).quantize(
+                    Decimal("0.01"), rounding=ROUND_HALF_UP
+                )
+            else:
+                resolved_discount = discount_value
+
+            if resolved_discount > subtotal:
                 self.add_error(
-                    "discount",
+                    "discount_value",
                     f"Discount cannot be greater than the order total (NPR {subtotal})."
                 )
+            cleaned_data["resolved_discount"] = resolved_discount
         return cleaned_data

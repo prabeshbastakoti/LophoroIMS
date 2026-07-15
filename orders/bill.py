@@ -86,7 +86,8 @@ def _pan_box_table(pan: str) -> Table:
 
 # ── Main generator ────────────────────────────────────────────────────────────
 
-def generate_bill_pdf(order, invoice_no, bill_date, transaction_date, payment_mode, discount, staff_name) -> bytes:
+def generate_bill_pdf(order, invoice_no, bill_date, transaction_date, payment_mode, discount, staff_name,
+                       discount_type='AMOUNT', discount_value=None) -> bytes:
     buf = BytesIO()
     doc = SimpleDocTemplate(
         buf, pagesize=A4,
@@ -298,9 +299,14 @@ def generate_bill_pdf(order, invoice_no, bill_date, transaction_date, payment_mo
     label_col = W - 2.5 * cm - 2.0 * cm
     tot_col_w = [label_col, 2.5 * cm, 2.0 * cm]
 
+    if discount_type == 'PERCENT' and discount_value:
+        discount_label = f'Discount ({discount_value.normalize()}%)'
+    else:
+        discount_label = 'Discount/Others'
+
     totals_data = [
         [Paragraph('Sub-Total', tl), Paragraph(sub_rs, tv), Paragraph(sub_ps, tv)],
-        [Paragraph('Discount/Others', tl), Paragraph(disc_rs, tv), Paragraph(disc_ps, tv)],
+        [Paragraph(discount_label, tl), Paragraph(disc_rs, tv), Paragraph(disc_ps, tv)],
         [Paragraph('Total Taxes', tl), Paragraph('0', tv), Paragraph('00', tv)],
         [Paragraph('Grand Total', tb), Paragraph(gt_rs, tbv), Paragraph(gt_ps, tbv)],
     ]

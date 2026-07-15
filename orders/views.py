@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 
 from django.contrib import messages
@@ -266,6 +267,13 @@ def order_return_view(request, order_id):
 
 # ── Bill / Tax Invoice ──────────────────────────────────────────────────────
 
+def _suggested_invoice_no(last_invoice):
+    if not last_invoice or not re.fullmatch(r"\d+", last_invoice.invoice_no):
+        return ""
+    digits = last_invoice.invoice_no
+    return str(int(digits) + 1).zfill(len(digits))
+
+
 @login_required
 def bill_view(request, order_id):
     order = get_object_or_404(
@@ -273,6 +281,7 @@ def bill_view(request, order_id):
         id=order_id, status='CONFIRMED',
     )
     today = timezone.localdate()
+    last_invoice = Invoice.objects.order_by('-id').first()
     if request.method == 'POST':
         form = BillDetailsForm(request.POST, order=order)
         if form.is_valid():
@@ -282,7 +291,9 @@ def bill_view(request, order_id):
                 bill_date=form.cleaned_data['bill_date'],
                 transaction_date=form.cleaned_data['transaction_date'],
                 payment_mode=form.cleaned_data['payment_mode'],
-                discount=form.cleaned_data['discount'],
+                discount_type=form.cleaned_data['discount_type'],
+                discount_value=form.cleaned_data['discount_value'],
+                discount=form.cleaned_data['resolved_discount'],
                 staff_name=form.cleaned_data['staff_name'],
                 issued_by=request.user,
             )
@@ -293,6 +304,8 @@ def bill_view(request, order_id):
                 transaction_date=invoice.transaction_date,
                 payment_mode=invoice.payment_mode,
                 discount=invoice.discount,
+                discount_type=invoice.discount_type,
+                discount_value=invoice.discount_value,
                 staff_name=invoice.staff_name,
             )
             resp = HttpResponse(pdf_bytes, content_type='application/pdf')
@@ -303,12 +316,14 @@ def bill_view(request, order_id):
             'bill_date': today,
             'transaction_date': timezone.localtime(order.created_at).date(),
             'staff_name': order.created_by.get_full_name() or order.created_by.username,
+            'invoice_no': _suggested_invoice_no(last_invoice),
         })
     existing_invoices = order.invoices.select_related('issued_by').order_by('-issued_at')
     return render(request, 'orders/bill_form.html', {
         'order': order,
         'form': form,
         'existing_invoices': existing_invoices,
+        'last_invoice': last_invoice,
     })
 
 
@@ -327,6 +342,8 @@ def invoice_download_view(request, invoice_id):
         transaction_date=invoice.transaction_date,
         payment_mode=invoice.payment_mode,
         discount=invoice.discount,
+        discount_type=invoice.discount_type,
+        discount_value=invoice.discount_value,
         staff_name=invoice.staff_name,
     )
     resp = HttpResponse(pdf_bytes, content_type='application/pdf')

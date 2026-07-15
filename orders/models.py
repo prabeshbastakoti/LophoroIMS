@@ -88,11 +88,21 @@ class OrderReturn(models.Model):
 
 
 class Invoice(models.Model):
+    DISCOUNT_TYPE_CHOICES = (
+        ("AMOUNT", "Amount (NPR)"),
+        ("PERCENT", "Percent (%)"),
+    )
+
     order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name="invoices")
     invoice_no = models.CharField(max_length=30, unique=True)
     bill_date = models.DateField()
     transaction_date = models.DateField()
     payment_mode = models.CharField(max_length=20)
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, default="AMOUNT")
+    discount_value = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        validators=[MinValueValidator(0, message="Discount cannot be negative.")],
+    )
     discount = models.DecimalField(
         max_digits=10, decimal_places=2, default=0,
         validators=[MinValueValidator(0, message="Discount cannot be negative.")],
