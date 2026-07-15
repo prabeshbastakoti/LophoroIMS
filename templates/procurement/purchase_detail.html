@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load money_filters %}
 
 {% block content %}
 <div class="content-card">
@@ -37,7 +38,7 @@
             <tr>
                 <td>{{ item.product.name }}</td>
                 <td>{{ item.quantity }}</td>
-                <td>{{ item.unit_cost }}</td>
+                <td>{{ item.unit_cost|money }}</td>
             </tr>
             {% empty %}
             <tr>

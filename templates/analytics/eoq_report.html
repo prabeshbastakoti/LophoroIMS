@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load money_filters %}
 {% block title %}EOQ Report — Lophoro IMS{% endblock %}
 {% block breadcrumb %}EOQ Report{% endblock %}
 
@@ -59,11 +60,11 @@
       </div>
       <div class="eoq-param">
         <span class="eoq-param-label">Ordering Cost</span>
-        <span class="eoq-param-val">NPR {{ item.product.ordering_cost }}</span>
+        <span class="eoq-param-val">NPR {{ item.product.ordering_cost|money }}</span>
       </div>
       <div class="eoq-param">
         <span class="eoq-param-label">Holding Cost</span>
-        <span class="eoq-param-val">NPR {{ item.product.holding_cost }}</span>
+        <span class="eoq-param-val">NPR {{ item.product.holding_cost|money }}</span>
       </div>
     </div>
   </div>

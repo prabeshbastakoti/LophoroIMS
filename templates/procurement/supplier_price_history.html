@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load money_filters %}
 {% block title %}Price History — {{ supplier.name }} — Lophoro IMS{% endblock %}
 {% block breadcrumb %}Price History · {{ supplier.name }}{% endblock %}
 
@@ -27,7 +28,7 @@
         <tr>
           <td class="text-muted" style="white-space:nowrap;">{{ entry.recorded_at|date:"d M Y, H:i" }}</td>
           <td><strong>{{ entry.product.name }}</strong></td>
-          <td>NPR {{ entry.unit_cost }}</td>
+          <td>NPR {{ entry.unit_cost|money }}</td>
           <td>{{ entry.recorded_by.username|default:"—" }}</td>
         </tr>
         {% empty %}

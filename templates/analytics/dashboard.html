@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load money_filters %}
 {% block title %}Dashboard — Lophoro IMS{% endblock %}
 {% block breadcrumb %}Dashboard{% endblock %}
 
@@ -102,7 +103,7 @@
       Today's Revenue
     </p>
     <p style="font-size:30px;font-weight:800;letter-spacing:-0.02em;color:var(--color-text-dark);line-height:1;">
-      NPR {{ today_revenue|floatformat:0 }}
+      NPR {{ today_revenue|money }}
     </p>
     <p style="font-size:12px;color:var(--color-text-muted);margin-top:var(--space-2);">
       from confirmed orders
@@ -115,7 +116,7 @@
       This Month
     </p>
     <p style="font-size:28px;font-weight:800;letter-spacing:-0.02em;color:var(--color-text-dark);line-height:1;">
-      NPR {{ this_month_revenue|floatformat:0 }}
+      NPR {{ this_month_revenue|money }}
     </p>
     {% if month_change is not None %}
     <p style="font-size:13px;font-weight:600;margin-top:var(--space-2);
@@ -181,7 +182,7 @@
                 </a>
               </td>
               <td>{{ row.order.customer.name|default:"—" }}</td>
-              <td>NPR {{ row.total|floatformat:0 }}</td>
+              <td>NPR {{ row.total|money }}</td>
               <td>
                 {% if row.order.status == "CONFIRMED" %}
                   <span class="badge badge-success">Confirmed</span>
@@ -253,7 +254,7 @@
           <h3 class="panel-title">Revenue Trend</h3>
           <p class="panel-subtitle">
             {% if month_change is not None %}
-              This month: NPR {{ this_month_revenue|floatformat:0 }}
+              This month: NPR {{ this_month_revenue|money }}
               &nbsp;
               <span style="font-weight:700;color:{% if month_change > 0 %}var(--color-success){% elif month_change < 0 %}var(--color-danger){% else %}var(--color-text-muted){% endif %};">
                 {% if month_change > 0 %}▲ +{{ month_change }}%{% elif month_change < 0 %}▼ {{ month_change }}%{% else %}→ 0%{% endif %}
