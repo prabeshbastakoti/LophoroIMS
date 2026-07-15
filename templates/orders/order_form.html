@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ page_title }} — Lophoro IMS{% endblock %}
 {% block breadcrumb %}{{ page_title }}{% endblock %}
 
@@ -18,7 +19,7 @@
     </a>
   </div>
 
-  <form method="POST">
+  <form method="POST" action="{% if order %}/orders/{{ order.id }}/edit/{% else %}/orders/add/{% endif %}">
     {% csrf_token %}
     {{ formset.management_form }}
     {% if formset.non_form_errors %}
@@ -26,26 +27,60 @@
     {% endif %}
 
     <div class="form-grid" style="margin-bottom:var(--space-5);">
-      <div class="form-group form-group-full">
-        <label class="form-label">Customer <span style="font-weight:400;color:var(--color-text-mid);">(optional)</span></label>
-        <select name="customer" class="form-select">
-          <option value="">— Walk-in / No customer —</option>
-          {% for c in customers %}
-          <option value="{{ c.id }}">{{ c.name }}{% if c.phone %} · {{ c.phone }}{% endif %}</option>
+      <div class="form-group form-group-full customer-search-wrap">
+        <label class="form-label">Customer <span style="font-weight:400;color:var(--color-text-mid);">(optional — search existing or type a new customer)</span></label>
+        <input type="hidden" id="customer_id" name="customer_id" value="{% if selected_customer %}{{ selected_customer.id }}{% elif order.customer_id %}{{ order.customer_id }}{% endif %}">
+        <input type="text" id="customer_name" name="customer_name" class="form-input"
+               placeholder="Search by name/phone, or type a new customer's name"
+               data-search-url="/orders/customers/search/"
+               value="{% if selected_customer %}{{ selected_customer.name }}{% elif order.customer %}{{ order.customer.name }}{% endif %}"
+               autocomplete="off">
+        <div id="customer-suggestions"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input type="text" id="customer_phone" name="customer_phone" class="form-input"
+               value="{% if selected_customer %}{{ selected_customer.phone }}{% elif order.customer %}{{ order.customer.phone }}{% endif %}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="customer_email" name="customer_email" class="form-input"
+               value="{% if selected_customer %}{{ selected_customer.email }}{% elif order.customer %}{{ order.customer.email }}{% endif %}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input type="text" id="customer_address" name="customer_address" class="form-input"
+               value="{% if selected_customer %}{{ selected_customer.address }}{% elif order.customer %}{{ order.customer.address }}{% endif %}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">PAN No.</label>
+        <input type="text" id="customer_pan" name="customer_pan" class="form-input"
+               value="{% if selected_customer %}{{ selected_customer.buyer_pan }}{% elif order.customer %}{{ order.customer.buyer_pan }}{% endif %}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Source of Sale</label>
+        <select name="source" class="form-select">
+          <option value="">— Not specified —</option>
+          {% for value, label in source_choices %}
+          <option value="{{ value }}" {% if order.source == value %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
-        <a href="/orders/customers/add/" target="_blank" style="font-size:12px;margin-top:4px;display:inline-block;color:var(--color-primary-light);">+ Add new customer</a>
+      </div>
+      <div class="form-group form-group-full">
+        <a href="/orders/customers/add/" target="_blank" style="font-size:12px;display:inline-block;color:var(--color-primary-light);">+ Add new customer in a separate page</a>
       </div>
     </div>
 
     <div class="formset-table">
-      <div class="formset-header">
+      <div class="formset-header{% if order %} formset-header-3col{% endif %}">
         <span>Product</span>
         <span>Quantity</span>
+        {% if order %}<span>Remove</span>{% endif %}
       </div>
       {% for form in formset %}
-      <div class="formset-row">
+      <div class="formset-row{% if order %} formset-row-3col{% endif %}">
         <div class="form-group">
+          {{ form.id }}
           {{ form.product }}
           {% if form.product.errors %}<div class="field-error">{{ form.product.errors|join:" " }}</div>{% endif %}
         </div>
@@ -53,6 +88,11 @@
           {{ form.quantity }}
           {% if form.quantity.errors %}<div class="field-error">{{ form.quantity.errors|join:" " }}</div>{% endif %}
         </div>
+        {% if order %}
+        <div class="form-group">
+          {% if form.instance.pk %}{{ form.DELETE }}{% endif %}
+        </div>
+        {% endif %}
       </div>
       {% endfor %}
     </div>
@@ -63,4 +103,8 @@
     </div>
   </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/customer-autocomplete.js' %}" defer></script>
 {% endblock %}

@@ -26,6 +26,11 @@
     </div>
   </div>
 
+  <form method="GET" class="header-search" style="margin:0 var(--space-5) var(--space-4);max-width:340px;">
+    <i data-lucide="search" width="15" height="15" class="search-icon"></i>
+    <input type="text" name="q" placeholder="Search by name or phone..." class="search-input" value="{{ q|default:'' }}">
+  </form>
+
   <div class="table-responsive">
     <table class="data-table">
       <thead>
@@ -54,16 +59,31 @@
           <td>{{ customer.address|default:"—" }}</td>
           <td><span class="badge badge-neutral">{{ customer.orders.count }}</span></td>
           <td class="actions-cell">
+            <a href="/orders/add/?customer_id={{ customer.id }}" class="btn-table-view">New Order</a>
             <a href="/orders/customers/{{ customer.id }}/edit/" class="btn-table-edit">Edit</a>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="7" class="empty-row">No customers yet. Add your first customer.</td>
+          <td colspan="7" class="empty-row">
+            {% if q %}No customers match "{{ q }}".{% else %}No customers yet. Add your first customer.{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="display:flex;justify-content:center;gap:var(--space-3);padding:var(--space-5);">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}" class="btn-secondary">← Previous</a>
+    {% endif %}
+    <span style="align-self:center;font-size:13px;color:var(--color-text-mid);">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}" class="btn-secondary">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

@@ -26,6 +26,14 @@ class Order(models.Model):
         ("CANCELLED", "Cancelled"),
     )
 
+    SOURCE_CHOICES = (
+        ("INSTAGRAM", "Instagram"),
+        ("FACEBOOK", "Facebook"),
+        ("WHATSAPP", "WhatsApp"),
+        ("FRIEND_FAMILY", "Friend/Family"),
+        ("OTHER", "Other"),
+    )
+
     customer = models.ForeignKey(
         Customer,
         on_delete=models.SET_NULL,
@@ -40,6 +48,7 @@ class Order(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="DRAFT")
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, blank=True)
 
     def __str__(self):
         return f"Order #{self.id} - {self.status}"

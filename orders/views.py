@@ -1,7 +1,11 @@
+from decimal import Decimal
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db import transaction
-from django.http import HttpResponse
+from django.db.models import Q
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -19,14 +23,59 @@ def order_list(request):
     return render(request, "orders/order_list.html", {"orders": orders})
 
 
+def _resolve_customer(request):
+    """Resolve the customer for an order from POSTed autocomplete/manual-entry fields.
+
+    Returns (customer_or_None, created_new, error_message_or_None).
+    """
+    customer_id = request.POST.get("customer_id") or None
+    if customer_id:
+        customer = Customer.objects.filter(id=customer_id).first()
+        if customer:
+            return customer, False, None
+
+    name = request.POST.get("customer_name", "").strip()
+    if not name:
+        return None, False, None
+
+    phone = request.POST.get("customer_phone", "").strip()
+    if phone:
+        existing = Customer.objects.filter(phone=phone).first()
+        if existing:
+            return existing, False, None
+
+    form = CustomerForm(data={
+        "name": name,
+        "phone": phone,
+        "email": request.POST.get("customer_email", "").strip(),
+        "address": request.POST.get("customer_address", "").strip(),
+        "buyer_pan": request.POST.get("customer_pan", "").strip(),
+    })
+    if form.is_valid():
+        return form.save(), True, None
+
+    errors = "; ".join(f"{field}: {', '.join(errs)}" for field, errs in form.errors.items())
+    return None, False, f"Customer details invalid — {errors}"
+
+
 @login_required
 def order_create(request):
     if request.method == "POST":
-        customer_id = request.POST.get("customer") or None
+        customer, customer_created, customer_error = _resolve_customer(request)
+        if customer_error:
+            messages.error(request, customer_error)
+            formset = OrderItemFormSet(request.POST)
+            return render(request, "orders/order_form.html", {
+                "formset": formset,
+                "source_choices": Order.SOURCE_CHOICES,
+                "page_title": "Create Order",
+            })
+
+        source = request.POST.get("source", "")
         reset_formset = False
 
         with transaction.atomic():
-            order = Order.objects.create(created_by=request.user, customer_id=customer_id)
+            order = Order.objects.create(created_by=request.user, customer=customer, source=source)
             formset = OrderItemFormSet(request.POST, instance=order)
             success = False
 
@@ -53,6 +102,8 @@ def order_create(request):
 
             if not success:
                 order.delete()
+                if customer_created:
+                    customer.delete()
 
         if success:
             log_action(request.user, "CREATE", order)
@@ -63,15 +114,87 @@ def order_create(request):
 
         return render(request, "orders/order_form.html", {
             "formset": formset,
-            "customers": Customer.objects.order_by("name"),
+            "source_choices": Order.SOURCE_CHOICES,
             "page_title": "Create Order",
         })
+
+    selected_customer = None
+    customer_id = request.GET.get("customer_id")
+    if customer_id:
+        selected_customer = Customer.objects.filter(id=customer_id).first()
 
     formset = OrderItemFormSet()
     return render(request, "orders/order_form.html", {
         "formset": formset,
-        "customers": Customer.objects.order_by("name"),
+        "source_choices": Order.SOURCE_CHOICES,
+        "selected_customer": selected_customer,
         "page_title": "Create Order",
+    })
+
+
+@login_required
+def order_edit(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    if order.status != "DRAFT":
+        messages.error(request, "Only draft orders can be edited.")
+        return redirect(f"/orders/{order.id}/")
+
+    if request.method == "POST":
+        customer, customer_created, customer_error = _resolve_customer(request)
+        if customer_error:
+            messages.error(request, customer_error)
+            formset = OrderItemFormSet(request.POST, instance=order)
+            return render(request, "orders/order_form.html", {
+                "formset": formset,
+                "order": order,
+                "source_choices": Order.SOURCE_CHOICES,
+                "page_title": f"Edit Order #{order.id}",
+            })
+
+        with transaction.atomic():
+            formset = OrderItemFormSet(request.POST, instance=order)
+            success = False
+
+            if formset.is_valid():
+                items = formset.save(commit=False)
+                for item in items:
+                    if item.product and item.quantity:
+                        item.order = order
+                        item.save()
+                for deleted_item in formset.deleted_objects:
+                    deleted_item.delete()
+
+                if order.items.exists():
+                    order.customer = customer
+                    order.source = request.POST.get("source", "")
+                    order.save(update_fields=["customer", "source"])
+                    success = True
+                else:
+                    messages.error(request, "Please keep at least one valid order item.")
+            else:
+                messages.error(request, "Please fix the errors below.")
+
+            if not success and customer_created:
+                customer.delete()
+
+        if success:
+            log_action(request.user, "UPDATE", order, "Order edited")
+            messages.success(request, f"Order #{order.id} updated.")
+            return redirect(f"/orders/{order.id}/")
+
+        return render(request, "orders/order_form.html", {
+            "formset": formset,
+            "order": order,
+            "source_choices": Order.SOURCE_CHOICES,
+            "page_title": f"Edit Order #{order.id}",
+        })
+
+    formset = OrderItemFormSet(instance=order)
+    return render(request, "orders/order_form.html", {
+        "formset": formset,
+        "order": order,
+        "source_choices": Order.SOURCE_CHOICES,
+        "page_title": f"Edit Order #{order.id}",
     })
 
 
@@ -214,9 +337,42 @@ def invoice_download_view(request, invoice_id):
 # ── Customer views ──────────────────────────────────────────────────────────
 
 @login_required
+def customer_search_api(request):
+    q = request.GET.get("q", "").strip()
+    results = []
+    if q:
+        customers = Customer.objects.filter(
+            Q(name__icontains=q) | Q(phone__icontains=q)
+        ).order_by("name")[:10]
+        results = [
+            {
+                "id": c.id,
+                "name": c.name,
+                "phone": c.phone,
+                "email": c.email,
+                "address": c.address,
+                "buyer_pan": c.buyer_pan,
+            }
+            for c in customers
+        ]
+    return JsonResponse({"results": results})
+
+
+@login_required
 def customer_list(request):
+    q = request.GET.get("q", "").strip()
     customers = Customer.objects.order_by("name")
-    return render(request, "orders/customer_list.html", {"customers": customers})
+    if q:
+        customers = customers.filter(Q(name__icontains=q) | Q(phone__icontains=q))
+
+    paginator = Paginator(customers, 25)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(request, "orders/customer_list.html", {
+        "customers": page_obj,
+        "page_obj": page_obj,
+        "q": q,
+    })
 
 
 @login_required

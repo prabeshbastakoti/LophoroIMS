@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load money_filters %}
 {% block title %}Order #{{ order.id }} — Lophoro IMS{% endblock %}
 {% block breadcrumb %}Order #{{ order.id }}{% endblock %}
 
@@ -17,6 +18,7 @@
       </div>
       <div style="display:flex;gap:var(--space-3);align-items:center;">
         {% if order.status == "DRAFT" %}
+          <a href="/orders/{{ order.id }}/edit/" class="btn-secondary">Edit Order</a>
           <form method="POST" action="/orders/{{ order.id }}/confirm/" style="display:inline;">
             {% csrf_token %}
             <button type="submit" class="btn-primary">Confirm Order</button>
@@ -42,7 +44,7 @@
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-top:var(--space-4);">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-top:var(--space-4);">
       <div>
         <span class="form-label">Status</span>
         <div style="margin-top:4px;">
@@ -54,6 +56,10 @@
       <div>
         <span class="form-label">Customer</span>
         <div style="margin-top:4px;font-weight:600;">{{ order.customer.name|default:"—" }}</div>
+      </div>
+      <div>
+        <span class="form-label">Source</span>
+        <div style="margin-top:4px;font-weight:600;">{{ order.get_source_display|default:"—" }}</div>
       </div>
       <div>
         <span class="form-label">Created By</span>
@@ -82,8 +88,8 @@
           <tr>
             <td><strong>{{ item.product.name }}</strong></td>
             <td>{{ item.quantity }}</td>
-            <td>NPR {{ item.product.selling_price }}</td>
-            <td>NPR {{ item.quantity|floatformat:0 }} × {{ item.product.selling_price }}</td>
+            <td>NPR {{ item.product.selling_price|money }}</td>
+            <td>NPR {% widthratio item.quantity 1 item.product.selling_price %}</td>
           </tr>
           {% empty %}
           <tr><td colspan="4" class="empty-row">No items.</td></tr>
@@ -181,7 +187,7 @@
             <td><strong>#{{ inv.invoice_no }}</strong></td>
             <td>{{ inv.bill_date|date:"d M Y" }}</td>
             <td>{{ inv.payment_mode }}</td>
-            <td>{% if inv.discount %}NPR {{ inv.discount }}{% else %}—{% endif %}</td>
+            <td>{% if inv.discount %}NPR {{ inv.discount|money }}{% if inv.discount_type == "PERCENT" %} ({{ inv.discount_value|money }}%){% endif %}{% else %}—{% endif %}</td>
             <td>{{ inv.staff_name }}</td>
             <td class="text-muted">{{ inv.issued_by.username|default:"—" }}</td>
             <td class="text-muted">{{ inv.issued_at|date:"d M Y, H:i" }}</td>

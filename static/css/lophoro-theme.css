@@ -1109,6 +1109,29 @@ tbody tr:nth-child(n+11) { animation: rowSlideIn 280ms 400ms ease both; }
   line-height: 1.5;
 }
 
+.customer-search-wrap { position: relative; }
+#customer-suggestions {
+  display: none;
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  background: var(--color-white);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 20;
+  margin-top: 4px;
+}
+.customer-suggestion-item {
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  cursor: pointer;
+}
+.customer-suggestion-item:hover {
+  background: var(--color-cream-light);
+}
+
 .form-non-field-errors {
   background: rgba(220,38,38,0.06);
   border: 1px solid rgba(220,38,38,0.25);
