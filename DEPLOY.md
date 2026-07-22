@@ -5,37 +5,26 @@ code pulled from git.
 
 ---
 
-## 1. Create the database (cPanel → MySQL® Databases)
+**Do steps 1 and 2 in this order.** Cloning must happen into an empty folder, but
+creating the Python app first puts `passenger_wsgi.py` and `tmp/` in it. Clone
+first, then point the app at the folder you cloned into.
 
-1. Create a database, e.g. `cpaneluser_lophoroims`.
-2. Create a user, e.g. `cpaneluser_lophoro`, with a strong password.
-3. Add the user to the database with **ALL PRIVILEGES**.
+## 1. Clone the code (cPanel → Git™ Version Control)
 
-Note the full prefixed names — they go in `.env`.
-
-## 2. Create the Python app (cPanel → Setup Python App)
+Click **Create**, then:
 
 | Field | Value |
 | --- | --- |
-| Python version | 3.11 or newer |
-| Application root | `lophoroims` (a folder in your home dir, **not** inside `public_html`) |
-| Application URL | the domain/subdomain the app should answer on |
-| Application startup file | `passenger_wsgi.py` |
-| Application Entry point | `application` |
+| Clone a Repository | toggle **on** |
+| Clone URL | `https://github.com/prabeshbastakoti/LophoroIMS.git` |
+| Repository Path | `lophoroims` — must **not** already exist, and must be outside `public_html` |
 
-Click **Create**. cPanel makes the folder and a virtualenv, and shows a
-"Enter to the virtual environment" command like:
+The repo is public, so no deploy key or token is needed.
 
-```
-source /home/cpaneluser/virtualenv/lophoroims/3.11/bin/activate && cd /home/cpaneluser/lophoroims
-```
+<details>
+<summary>If you already created the Python app first</summary>
 
-Copy that command — you need it for every terminal step below.
-
-## 3. Pull the code (cPanel → Terminal, or SSH)
-
-cPanel creates `passenger_wsgi.py` and `tmp/` in the app root, so the folder is
-not empty and `git clone` will refuse it. Clone into it like this:
+The folder is not empty, so `git clone` refuses it. From Terminal:
 
 ```bash
 cd ~/lophoroims
@@ -45,8 +34,36 @@ git remote add origin https://github.com/prabeshbastakoti/LophoroIMS.git
 git fetch origin main
 git checkout -f -t origin/main
 ```
+</details>
 
-For later updates, that becomes just `git pull` (see step 8).
+## 2. Create the Python app (cPanel → Setup Python App)
+
+| Field | Value |
+| --- | --- |
+| Python version | 3.11 or newer |
+| Application root | `lophoroims` — the folder you just cloned into |
+| Application URL | the domain/subdomain the app should answer on |
+| Application startup file | `passenger_wsgi.py` |
+| Application Entry point | `application` |
+
+Click **Create**. cPanel builds a virtualenv and shows an "Enter to the virtual
+environment" command like:
+
+```
+source /home/cpaneluser/virtualenv/lophoroims/3.11/bin/activate && cd /home/cpaneluser/lophoroims
+```
+
+Copy that command — you need it for every terminal step below.
+
+## 3. Create the database (cPanel → MySQL® Databases)
+
+1. Create a database, e.g. `cpaneluser_lophoroims`.
+2. Create a user, e.g. `cpaneluser_lophoro`, with a strong password.
+3. Add the user to the database with **ALL PRIVILEGES**.
+
+Note the full prefixed names — they go in `.env`. Leave the database empty;
+`migrate` builds the tables in step 6. You can inspect them afterwards in
+phpMyAdmin.
 
 ## 4. Configure `.env`
 
@@ -135,6 +152,13 @@ touch tmp/restart.txt
 
 `touch tmp/restart.txt` tells Passenger to reload the app — same effect as the
 Restart button.
+
+You can also press **Update from Remote** in Git™ Version Control instead of
+`git pull`, but that button *only* fetches code — it does not install packages,
+migrate, collect static, or restart. The remaining four commands still have to be
+run in Terminal. Note also that it refuses to pull if tracked files were edited
+on the server, so make config changes in `.env` (which is gitignored) rather than
+by editing tracked files directly.
 
 ---
 
