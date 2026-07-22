@@ -24,9 +24,13 @@ db.sqlite3
 db.sqlite3-journal
 media/
 
+# Build output of `collectstatic` - regenerated on each deploy, never committed
+staticfiles/
+
 # Database backups
 backups/
 
 # Environment variables
 .env
 .env.*
+!.env.example

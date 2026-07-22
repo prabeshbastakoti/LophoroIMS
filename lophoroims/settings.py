@@ -21,25 +21,36 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
+# Quick-start development settings - suitable for local development.
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
+# Defaults to False so a missing/typo'd env var on the server can never expose
+# tracebacks. Set DJANGO_DEBUG=True in your local .env for development.
+DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in {"1", "true", "yes", "on"}
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-if not SECRET_KEY:
-    if DEBUG:
-        SECRET_KEY = 'django-insecure-dev-only-do-not-use-in-production'
-    else:
-        raise ImproperlyConfigured(
-            "DJANGO_SECRET_KEY environment variable is required when DEBUG is False. "
-            "Generate one with: python -c \"from django.core.management.utils import "
-            "get_random_secret_key; print(get_random_secret_key())\" and set it in your .env file."
-        )
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY') or 'django-insecure-dev-only-do-not-use-in-production'
+if not DEBUG and not os.getenv('DJANGO_SECRET_KEY'):
+    raise ImproperlyConfigured(
+        "DJANGO_SECRET_KEY environment variable is required when DEBUG is False. "
+        "Generate one with: python -c \"from django.core.management.utils import "
+        "get_random_secret_key; print(get_random_secret_key())\" and set it in your .env file."
+    )
 
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()]
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",")
+    if h.strip()
+]
+
+# Django 4+ requires the site's https origin here or every POST fails CSRF checks.
+# e.g. DJANGO_CSRF_TRUSTED_ORIGINS=https://ims.example.com,https://www.ims.example.com
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if o.strip()
+]
 
 
 # Application definition
@@ -61,6 +72,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Serves collected static files directly from the app process, so cPanel
+    # needs no extra Apache alias for /static/.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -92,16 +106,37 @@ WSGI_APPLICATION = 'lophoroims.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'lophoroims'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite').lower()
+
+if DB_ENGINE == 'postgresql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'lophoroims'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
     }
-}
+elif DB_ENGINE == 'mysql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('DB_NAME', 'lophoroims'),
+            'USER': os.getenv('DB_USER', 'root'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+            'PORT': os.getenv('DB_PORT', '3306'),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -145,11 +180,26 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
+
 AUTH_USER_MODEL = 'accounts.User'
 LOGIN_URL = "/accounts/login/"
 
 # Production security hardening (skipped in DEBUG so local dev over plain HTTP still works)
 if not DEBUG:
+    # cPanel terminates TLS at Apache and proxies to Passenger over plain HTTP,
+    # so Django only sees the request as secure via this forwarded header.
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    # Set DJANGO_SSL_REDIRECT=False if the domain has no certificate yet,
+    # otherwise the redirect to https will loop.
+    SECURE_SSL_REDIRECT = os.getenv("DJANGO_SSL_REDIRECT", "True").lower() in {"1", "true", "yes", "on"}
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
