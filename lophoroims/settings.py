@@ -189,6 +189,11 @@ STORAGES = {
     },
 }
 
+# Django 6.0 defaults to BigAutoField but 5.2 defaults to AutoField. The existing
+# migrations were built with BigAutoField, so set it explicitly rather than
+# inheriting a default that changes with the Django version.
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 AUTH_USER_MODEL = 'accounts.User'
 LOGIN_URL = "/accounts/login/"
 
