@@ -213,6 +213,38 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
 
+# Django's default logging only mails 500 tracebacks to ADMINS, so with
+# DEBUG=False and no ADMINS set they are discarded and the app looks silently
+# broken. Send them to stderr instead, which Passenger writes to the file named
+# by PassengerAppLogFile.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
 # Login attempt lockout (see accounts/views.py::login_view)
 LOGIN_ATTEMPT_LIMIT = 5
 LOGIN_LOCKOUT_SECONDS = 15 * 60
