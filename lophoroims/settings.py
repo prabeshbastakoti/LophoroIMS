@@ -103,10 +103,28 @@ TEMPLATES = [
 WSGI_APPLICATION = 'lophoroims.wsgi.application'
 
 
+# Defined here rather than with the other i18n settings below because the MySQL
+# connection needs it (see DB_TIME_ZONE).
+TIME_ZONE = 'Asia/Kathmandu'
+
+
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite').lower()
+
+# MySQL can only convert between named time zones when the server's timezone
+# tables are loaded, and loading them needs root, which shared hosting does not
+# give you. Without them CONVERT_TZ() returns NULL and any Trunc/__date query
+# dies with "Database returned an invalid datetime value".
+#
+# Declaring the connection's time zone equal to TIME_ZONE makes Django skip the
+# CONVERT_TZ() wrapper altogether: it converts datetimes in Python on the way in
+# and out instead. Datetimes are then stored in local time rather than UTC, so
+# only change this on a database that is empty or whose timestamps you are
+# prepared to reinterpret. Set DB_TIME_ZONE=UTC if your MySQL server does have
+# timezone tables loaded and you would rather store UTC.
+DB_TIME_ZONE = os.getenv('DB_TIME_ZONE', TIME_ZONE)
 
 if DB_ENGINE == 'postgresql':
     DATABASES = {
@@ -128,6 +146,7 @@ elif DB_ENGINE == 'mysql':
             'PASSWORD': os.getenv('DB_PASSWORD', ''),
             'HOST': os.getenv('DB_HOST', '127.0.0.1'),
             'PORT': os.getenv('DB_PORT', '3306'),
+            'TIME_ZONE': DB_TIME_ZONE,
         }
     }
 else:
@@ -163,7 +182,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Kathmandu'
+# TIME_ZONE is set above the DATABASES block, which depends on it.
 
 USE_I18N = True
 

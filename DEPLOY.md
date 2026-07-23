@@ -173,3 +173,16 @@ by editing tracked files directly.
 | Unstyled pages | `collectstatic` was not run after the last pull. |
 | `ImproperlyConfigured: DJANGO_SECRET_KEY ... required` | `.env` missing or the key is blank. |
 | Code changes not showing | `touch tmp/restart.txt`. |
+| `Database returned an invalid datetime value` | MySQL has no timezone tables loaded (needs root, so shared hosts often lack them). Handled by `DB_TIME_ZONE` defaulting to `TIME_ZONE`; if you overrode it to `UTC`, remove that. |
+
+To read a 500's traceback, use `tail -60 stderr.log`, or reproduce it directly:
+
+```bash
+python manage.py shell -c "
+from django.test import Client
+from accounts.models import User
+c = Client()
+c.force_login(User.objects.first())
+print(c.get('/analytics/', HTTP_HOST='your.domain', secure=True).status_code)
+"
+```
